@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Basket</title>
+    <meta name="charset" content="utf-8">
+    <link type="text/css" rel="stylesheet" href="css/bootstrap.css">
+    <link type="text/css" rel="stylesheet" href="css/bootstrap-responsive.css">
+    <link type="text/css" rel="stylesheet" href="css/suggest.min.css">
+
+    <style type="text/css">
+        .candidateItem {
+            display: none;
+        }
+        .candidateItem.active {
+            display:block;
+            transition: height .5s;
+            -moz-transition: height .5s; /* Firefox 4 */
+            -webkit-transition: height .5s; /* Safari and Chrome */
+            -o-transition: height .5s; /* Opera */
+        }
+    </style>
+
+    <script type="text/javascript" src="js/jquery-1.7.2.min.js"></script>
+</head>
+<body style="width:1024px; height: 1024px;">
+<div class="container-fluid">
+    <div data-bind="if: notification">
+        <div class="alert" data-bind="css: { 'alert-success': notification().type == 'success' }, text: notification().msg"></div>
+    </div>
+    <ul class="nav nav-tabs" id="navibar">
+        <li><a href='#gadgets' data-toggle="tab">Your stuff</a></li>
+        <li><a href='#add_new_item_tab' data-toggle="tab">Add new item</a></li>
+        <li><a href='#five_questions' data-toggle="tab">5 questions</a></li>
+    </ul>
+
+    <div class="tab-content">
+        <div id="gadgets" class="tab-pane active">
+            <ul class="thumbnails" data-bi>
+                <!-- ko foreach: pitems -->
+                <li class="span3">
+                    <div class="thumbnail">
+                        <img data-bind="attr: { src: imageUrl }" src="http://placehold.it/90x160" alt="">
+                        <h5 style="text-align: center" data-bind="text: name"></h5>
+                    </div>
+                </li>
+                <!-- /ko -->
+                <li data-bind="visible: noPItemsYet()" class="span3">
+                    <a id="jump_to_add_new" href="#" class="thumbnail">
+                        <img src="http://placehold.it/160x160&text=Add+new+item">
+                    </a>
+                </li>
+            </ul>
+            <div>
+                <a id="reset_store" class="btn btn-danger" type="submit"><i class="icon-minus-sign icon-white"></i> Clear store</a>
+            </div>
+        </div>
+        <div id="add_new_item_tab" class="tab-pane">
+            <h1 class="page-header">Add a new item to your Inventory</h1>
+            <form class="form-search form-inline" action="#">
+                <input id="new_gadget_name" type="text" class="search-query" placeholder="Start typing your gadget's name...">
+            </form>
+            <div class="candidateItem span3" data-bind="css: { active: candidateItem() != null }, if: candidateItem">
+                <div class="thumbnail">
+                    <img data-bind="attr: { src: candidateItem().imageUrl }" src="http://placehold.it/90x160" alt="">
+                    <h5 style="text-align: center" data-bind="text: candidateItem().name"></h5>
+                    <div class="caption">
+                        <a id="add_new_gadget_action" class="btn btn-primary" type="submit"><i class="icon-plus-sign icon-white"></i> Add</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="five_questions" class="tab-pane">
+            <h1>Coming soon...</h1>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+        // UI
+        function PinventoryViewModel(db) {
+            var self = this;
+            self.pitems = ko.observableArray([]);
+
+            self.noPItemsYet = ko.computed(function () {
+                return self.pitems().length < 1;
+            });
+
+            // react to changes in the datastore
+            self.itemAdded = function(newItem) {
+                self.pitems.push(newItem);
+                self.showNotification("success", "Just added a "+newItem.name+" to your inventory.")
+            };
+
+            // process command from the UI
+            self.addNewItem = function (itemdata) {
+                basket.store.addItem(db, basket.Item.createFromFreebaseHint(itemdata), self.itemAdded);
+            };
+
+            self.candidateItem = ko.observable(null);
+
+            self.setCandidateItem = function (itemdata) {
+                var item = basket.Item.createFromFreebaseHint(itemdata);
+                self.candidateItem(item);
+            };
+            self.addCandidateItem = function() {
+                var newItem = self.candidateItem();
+                if (newItem !== null) {
+                    self.addNewItem(newItem);
+                }
+                self.candidateItem(null);
+            };
+            self.deleteAllItems = function() {
+                if (confirm("This operation will remove all items from your personal inventory and CAN'T be undone!")) {
+                    basket.store.clear(basket.store.DB, function(result)
+                    {
+                        if (result == success) {
+                            self.pitems.removeAll();
+                        }
+                    });
+                }
+            };
+
+            // Notification support
+            self.notification = ko.observable(null);
+            self.notificationsEnabled = true;
+
+            self.showNotification = function(type,msg) {
+                if (self.notificationsEnabled) {
+                    self.notification({type:type, msg:msg});
+                    setTimeout(function() {
+                        self.notification(null);
+                    }, 2000);
+                }
+            };
+
+            // init
+            // with notifications disabled
+            self.notificationsEnabled = false;
+            basket.store.getItems(db, function(success, items) {
+                if (success) {
+                    $.each(items, function(idx, val) {
+                        self.itemAdded({ name: val.name.value, imageUrl: val.imageUrl.value });
+                    });
+                }
+            });
+            // turned back on
+            self.notificationsEnabled = true;
+        }
+</script>
+
+<script type="text/javascript">
+    // setup loop
+    $(function () {
+        var VM = new PinventoryViewModel(basket.store.DB);
+
+        ko.applyBindings(VM);
+
+        $("#new_gadget_name")
+                .suggest({"key":"AIzaSyCi0UfQrWCpa2hfslt7w-e6GhABQO_Pvoc"})
+                .bind("fb-select", function (e, data) {
+                    VM.setCandidateItem(data);
+                });
+        $("body").on({
+            "click":function() {
+                VM.addCandidateItem();
+            }
+        }, "#add_new_gadget_action");
+        $("#reset_store").on("click",function() {
+            VM.deleteAllItems();
+        });
+        $("#jump_to_add_new").on("click", function(e) {
+            e.preventDefault();
+            $('#navibar a[href="#add_new_item_tab"]').tab('show');
+        });
+
+    });
+</script>
+
+<script type="text/javascript" src="js/knockout-2.1.0.js"></script>
+<script type="text/javascript" src="js/bootstrap.min.js"></script>
+<!--
+<script type="text/javascript" src="https://www.gstatic.com/freebase/suggest/3_1/suggest.min.js"></script>
+<script type="text/javascript"
+        src="https://raw.github.com/antoniogarrote/rdfstore-js/master/browsertests/persistent/rdf_store.js"></script>
+-->
+<script type="text/javascript" src="js/suggest.min.js"></script>
+<script type="text/javascript" src="js/rdf_store.js"></script>
+<script type="text/javascript" src="js/gsh-store.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RDFStore JS test</title>
+
+</head>
+<body>
+<div></div>
+<script type="text/javascript" src="js/rdf_store.js"></script>
+
+<script type="text/javascript">
+    rdfstore.create({persistent:true, name:'test', overwrite:false},function(store) {
+        store.load('text/n3','@prefix : <http://example.org/people/>. <:a> <:b> "5".',function() { alert("Success")});
+    });
+</script>
+</body>
+</html>
