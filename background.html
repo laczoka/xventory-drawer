@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Basket</title>
+    <title>Drawer</title>
     <meta name="charset" content="utf-8">
     <link type="text/css" rel="stylesheet" href="css/bootstrap.css">
     <link type="text/css" rel="stylesheet" href="css/bootstrap-responsive.css">
@@ -12,11 +12,7 @@
             display: none;
         }
         .candidateItem.active {
-            display:block;
-            transition: height .5s;
-            -moz-transition: height .5s; /* Firefox 4 */
-            -webkit-transition: height .5s; /* Safari and Chrome */
-            -o-transition: height .5s; /* Opera */
+            display: block;
         }
     </style>
 
@@ -56,9 +52,12 @@
         </div>
         <div id="add_new_item_tab" class="tab-pane">
             <h1 class="page-header">Add a new item to your Inventory</h1>
-            <form class="form-search form-inline" action="#">
-                <input id="new_gadget_name" type="text" class="search-query" placeholder="Start typing your gadget's name...">
-            </form>
+            <div class="row">
+                <form class="span3 form-search form-inline" action="#">
+                    <input id="new_gadget_name" type="text" class="search-query" placeholder="Start typing your gadget's name...">
+                </form>
+            </div>
+            <div class="row">
             <div class="candidateItem span3" data-bind="css: { active: candidateItem() != null }, if: candidateItem">
                 <div class="thumbnail">
                     <img data-bind="attr: { src: candidateItem().imageUrl }" src="http://placehold.it/90x160" alt="">
@@ -67,6 +66,7 @@
                         <a id="add_new_gadget_action" class="btn btn-primary" type="submit"><i class="icon-plus-sign icon-white"></i> Add</a>
                     </div>
                 </div>
+            </div>
             </div>
         </div>
 
@@ -94,13 +94,13 @@
 
             // process command from the UI
             self.addNewItem = function (itemdata) {
-                basket.store.addItem(db, basket.Item.createFromFreebaseHint(itemdata), self.itemAdded);
+                drawer.store.addItem(db, drawer.Item.createFromFreebaseHint(itemdata), self.itemAdded);
             };
 
             self.candidateItem = ko.observable(null);
 
             self.setCandidateItem = function (itemdata) {
-                var item = basket.Item.createFromFreebaseHint(itemdata);
+                var item = drawer.Item.createFromFreebaseHint(itemdata);
                 self.candidateItem(item);
             };
             self.addCandidateItem = function() {
@@ -112,7 +112,7 @@
             };
             self.deleteAllItems = function() {
                 if (confirm("This operation will remove all items from your personal inventory and CAN'T be undone!")) {
-                    basket.store.clear(basket.store.DB, function(result)
+                    drawer.store.clear(drawer.store.DB, function(result)
                     {
                         if (result == success) {
                             self.pitems.removeAll();
@@ -137,7 +137,7 @@
             // init
             // with notifications disabled
             self.notificationsEnabled = false;
-            basket.store.getItems(db, function(success, items) {
+            drawer.store.getItems(db, function(success, items) {
                 if (success) {
                     $.each(items, function(idx, val) {
                         self.itemAdded({ name: val.name.value, imageUrl: val.imageUrl.value });
@@ -152,7 +152,7 @@
 <script type="text/javascript">
     // setup loop
     $(function () {
-        var VM = new PinventoryViewModel(basket.store.DB);
+        var VM = new PinventoryViewModel(drawer.store.DB);
 
         ko.applyBindings(VM);
 
@@ -176,6 +176,7 @@
 
     });
 </script>
+
 
 <script type="text/javascript" src="js/knockout-2.1.0.js"></script>
 <script type="text/javascript" src="js/bootstrap.min.js"></script>

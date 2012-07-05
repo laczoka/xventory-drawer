@@ -1,7 +1,7 @@
-var basket = basket || {};
+var drawer = drawer || {};
 
-basket.Item = {};
-basket.Item.create = function (itemdata) {
+drawer.Item = {};
+drawer.Item.create = function (itemdata) {
     var item = {};
     for (p in itemdata) {
         if (itemdata.hasOwnProperty(p)) {
@@ -14,9 +14,9 @@ basket.Item.create = function (itemdata) {
     return item;
 };
 
-basket.Item.createFromFreebaseHint = function (fbase_res) {
+drawer.Item.createFromFreebaseHint = function (fbase_res) {
     if (fbase_res["fbase:id"]) return fbase_res;
-    else return basket.Item.create({
+    else return drawer.Item.create({
         "fbase:id":fbase_res.id,
         name:fbase_res.name,
         imageUrl:'https://usercontent.googleapis.com/freebase/v1/image' + fbase_res.id
@@ -25,13 +25,13 @@ basket.Item.createFromFreebaseHint = function (fbase_res) {
 
 
 /* storage & persistence*/
-basket.store = {};
+drawer.store = {};
 
-basket.store.DB = rdfstore.create({persistent:true, name:'basket', overwrite:false}, function () {
+drawer.store.DB = rdfstore.create({persistent:true, name:'drawer', overwrite:false}, function () {
 });
-basket.store.DB.registerDefaultProfileNamespaces();
+drawer.store.DB.registerDefaultProfileNamespaces();
 
-basket.store.clear = function (db, cb) {
+drawer.store.clear = function (db, cb) {
     db.clear(function (success) {
         if (success) {
             console.log("Successfully cleared the store.");
@@ -42,7 +42,7 @@ basket.store.clear = function (db, cb) {
     });
 };
 
-basket.store.insertJSONLD = function (store, item, cb) {
+drawer.store.insertJSONLD = function (store, item, cb) {
     store.load("application/ld+json", item,
         function (success, results) {
             if (success === true) {
@@ -54,7 +54,7 @@ basket.store.insertJSONLD = function (store, item, cb) {
         });
 };
 
-basket.store.addItem = function (store, /* item as jsonld */ item, cb) {
+drawer.store.addItem = function (store, /* item as jsonld */ item, cb) {
     // add GoodRelations ns
     item["@context"] = item["@context"] || {};
     item["@context"]["gr"] = "http://purl.org/goodrelations/v1#";
@@ -75,14 +75,14 @@ basket.store.addItem = function (store, /* item as jsonld */ item, cb) {
     // record time when it was added (UTC)
     item["xventory:added"] = (new Date()).getTime();
 
-    basket.store.insertJSONLD(store, item, cb);
+    drawer.store.insertJSONLD(store, item, cb);
 };
 
-basket.store.getItems = function (store, cb) {
-    store.execute(basket.query.allItemsFromStoreSparql, cb);
+drawer.store.getItems = function (store, cb) {
+    store.execute(drawer.query.allItemsFromStoreSparql, cb);
 };
 
-basket.store.loadIntoTempStore = function (/* Page URL */ url) {
+drawer.store.loadIntoTempStore = function (/* Page URL */ url) {
     // use rdf-translator.appspot.com for extraction into n3
     var rdfTr2N3Url = "http://rdf-translator.appspot.com/convert/detect/n3/";
 
@@ -94,16 +94,16 @@ basket.store.loadIntoTempStore = function (/* Page URL */ url) {
     });
 };
 
-basket.query = basket.query || { };
+drawer.query = drawer.query || { };
 
-basket.query.allItemsFromStoreSparql = "PREFIX gr: <http://purl.org/goodrelations/v1#> \
+drawer.query.allItemsFromStoreSparql = "PREFIX gr: <http://purl.org/goodrelations/v1#> \
                                         PREFIX foaf: <http://xmlns.com/foaf/0.1/> \
                                         SELECT ?name ?imageUrl WHERE { ?p a gr:ProductOrService. \
                                                                  ?p gr:name ?name. \
                                                                  OPTIONAL \
                                                                  { ?p foaf:depiction ?imageUrl } }";
 
-basket.query.allItemsFromPageSparql = "PREFIX gr: <http://purl.org/goodrelations/v1#> \
+drawer.query.allItemsFromPageSparql = "PREFIX gr: <http://purl.org/goodrelations/v1#> \
                                        PREFIX foaf: <http://xmlns.com/foaf/0.1/> \
                                        SELECT ?name ?imageUrl WHERE { { ?p a gr:ProductOrService } UNION { ?p a gr:SomeItems } UNION { ?p a gr:Individual } \
                                                          ?p gr:name ?name.\

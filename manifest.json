@@ -1,19 +1,29 @@
 {
-  "name": "Basket",
-  "version": "0.1",
-  "description": "Organize your personal items",
-  "icons": { "128": "img/logo_128x128.png" },
-  "background": {
-      "scripts": ["js/background.js"]
-  },
-  "content_scripts" : [{
-      "matches" : ["<all_urls>"],
-      "js" : ["js/jquery-1.7.2.min.js", "js/gsh-detect.js" ],
-      "all_frames" : false
-  }],
-  "page_action": {
-    "default_title": "This shop is interested in stuff you bought in the past.",
-    "default_icon": "img/logo_128x128_active.png",
-    "default_popup": "background.html"
-  }
+    "name":"Drawer",
+    "version":"0.1",
+    "description":"Organize your personal items",
+    "icons":{
+        "128":"img/logo_128x128.png"
+    },
+    "background":{
+        "scripts":["js/background.js"]
+    },
+    "content_scripts":[
+        {
+            "matches":["<all_urls>"],
+            "js":["js/jquery-1.7.2.min.js", "js/gsh-detect.js" ],
+            "all_frames":false
+        }
+    ],   /*
+
+    "page_action":{
+        "default_title":"This shop is interested in stuff you bought in the past.",
+        "default_icon":"img/logo_128x128_active.png",
+        "default_popup":"background.html"
+    },     */
+    "browser_action":{
+        "default_icon" : "img/logo_128x128.png",
+        "default_title" : "Drawer - Your personal inventory",
+        "default_popup" : "background.html"
+    }
 }
