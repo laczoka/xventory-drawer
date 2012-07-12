@@ -6,7 +6,7 @@
         "128":"img/drawer_logo.png"
     },
     "background":{
-        "scripts":["js/background.js"]
+        "page": "background.html"
     },
     "content_scripts":[
         {

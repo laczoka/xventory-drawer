@@ -1,20 +1,18 @@
 //if ($('link[rel="http://purl.org/xventory/sink"]').length > 1) {
-var $link = $('link[rel="http://purl.org/xventory/sink"]');
-if ($link.length > 0) {
-    chrome.extension.sendRequest({}, function(response) {});
+//var $link = $('link[rel="http://purl.org/xventory/sink"]');
+//if ($link.length > 0) {
+//    chrome.extension.sendRequest({}, function(response) {});
+//}
+
+var drawer = {};
+
+drawer.sendToStore = function(data, callback) {
+    chrome.extension.sendMessage(data, callback);
 }
 
 var pageStore = rdfstore.create({persistent:false, name:'drawer_temp', overwrite:true}, function () { });
 
-var allItemsFromStoreSparql = "PREFIX gr: <http://purl.org/goodrelations/v1#> \
-                               PREFIX foaf: <http://xmlns.com/foaf/0.1/> \
-                               SELECT ?name ?imageUrl WHERE { {?p a gr:ProductOrService. }\
-                                                               UNION {?p a gr:ProductOrServiceModel. }\
-                                                               UNION {?p a gr:SomeItems. } \
-                                                              ?p gr:name ?name. \
-                                                              OPTIONAL \
-                                                              { ?p foaf:depiction ?imageUrl } }";
-
+// currently in use
 var allOffersFromStoreSparql = "PREFIX gr: <http://purl.org/goodrelations/v1#> \
                                PREFIX foaf: <http://xmlns.com/foaf/0.1/> \
                                SELECT ?name ?product_name ?imageUrl WHERE { ?offer a gr:Offering. \
@@ -26,9 +24,19 @@ var allOffersFromStoreSparql = "PREFIX gr: <http://purl.org/goodrelations/v1#> \
                                                                 ?product foaf:depiction ?imageUrl\
                                                               } }";
 
-var addItemAction = _.template("<div class='addItemAction'><a id='drawer_addItemAction' class='btn btn-info' data-toggle='modal' href='#drawer_addItemDialog'>++ Items ++</a></div>");
+// alt. query
+var allItemsFromStoreSparql = "PREFIX gr: <http://purl.org/goodrelations/v1#> \
+                               PREFIX foaf: <http://xmlns.com/foaf/0.1/> \
+                               SELECT ?name ?imageUrl WHERE { {?p a gr:ProductOrService. }\
+                                                               UNION {?p a gr:ProductOrServiceModel. }\
+                                                               UNION {?p a gr:SomeItems. } \
+                                                              ?p gr:name ?name. \
+                                                              OPTIONAL \
+                                                              { ?p foaf:depiction ?imageUrl } }";
 
-var addItemDialog = _.template("" +
+var addItemOpenDialogTpl = _.template("<div class='addItemOpenDialog'><a id='drawer_addItemOpenDialog' class='btn btn-info' data-toggle='modal' href='#drawer_addItemDialog'>++ Items ++</a></div>");
+
+var addItemDialogTpl = _.template("" +
     "<div id='drawer_addItemDialog' class='modal hide'>" +
     "<div class='modal-header'>" +
         "<button type='button' class='close' data-dismiss='modal'>×</button><h3>You may add these items to your Inventory</h3></div>" +
@@ -38,7 +46,12 @@ var addItemDialog = _.template("" +
             "<li class='span3'>" +
                 "<div class='thumbnail'>" +
                     "<img src='<%= item.imageUrl %>' alt=''>" +
-                        "<h5 style='text-align: center'><%= item.name %></h5></div></li><% }); %></ul></div></div>");
+                        "<div class='caption'>" +
+                            "<h5 style='text-align: center'><%= item.name %></h5>" +
+                            "<p><a class='btn btn-primary addItemAction' href='#' data-name='<%= item.name %>' data-image-url='<%= item.imageUrl %>'>Add</a></p>" +
+                        "</div></div></li><% }); %></ul></div></div>");
+
+
 
 
 $(document).ready(function() {
@@ -66,9 +79,19 @@ $(document).ready(function() {
                                     $("<link type='text/css' rel='stylesheet' href='"+
                                         chrome.extension.getURL("css/bootstrap.inpage.min.css")+"'>").appendTo("head");
 
-                                    $(addItemAction()).appendTo("body");
-                                    $(addItemDialog({items:items})).appendTo("body");
+                                    $(addItemOpenDialogTpl()).appendTo("body");
+                                    $(addItemDialogTpl({items:items})).appendTo("body");
                                     $("#drawer_addItemDialog").modal({show: false});
+                                    $(".addItemAction").on("click", _.once(function() {
+                                        var $this = $(this);
+                                        var name = $this.data("name");
+                                        var imageUrl = $this.data("image-url");
+                                        drawer.sendToStore({name:name, imageUrl:imageUrl}, function(response)
+                                        { response;
+                                            $this.text("Added");
+                                        });
+                                        $this.addClass("disabled");
+                                    }));
                                 }
 
                             }
