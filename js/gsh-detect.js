@@ -27,6 +27,7 @@ var allOffersFromStoreSparql = "PREFIX gr: <http://purl.org/goodrelations/v1#> \
                                                               } }";
 
 var addItemAction = _.template("<div class='addItemAction'><a id='drawer_addItemAction' class='btn btn-info' data-toggle='modal' href='#drawer_addItemDialog'>++ Items ++</a></div>");
+
 var addItemDialog = _.template("" +
     "<div id='drawer_addItemDialog' class='modal hide'>" +
     "<div class='modal-header'>" +
