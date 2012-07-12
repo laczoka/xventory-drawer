@@ -3,7 +3,7 @@
     "version":"0.1",
     "description":"Organize your personal items",
     "icons":{
-        "128":"img/logo_128x128.png"
+        "128":"img/drawer_logo.png"
     },
     "background":{
         "scripts":["js/background.js"]
