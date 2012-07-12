@@ -1,3 +1,4 @@
+// currently not used.....
 // activate page action
 chrome.extension.onRequest.addListener(
     function(request, sender, sendResponse) {
