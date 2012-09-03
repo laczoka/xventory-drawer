@@ -1,7 +1,8 @@
 {
     "name":"Drawer",
-    "version":"0.1",
+    "version":"0.1.1",
     "description":"Organize your personal items",
+    "update_url": "http://purl.org/xventory/drawer/updates.xml",
     "icons":{
         "128":"img/drawer_logo.png"
     },
