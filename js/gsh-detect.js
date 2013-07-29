@@ -51,14 +51,30 @@ var addItemDialogTpl = _.template("" +
                             "<p><a class='btn btn-primary addItemAction' href='#' data-name='<%= item.name %>' data-image-url='<%= item.imageUrl %>'>Add</a></p>" +
                         "</div></div></li><% }); %></ul></div></div>");
 
+var itemListTpl = _.template(
+    "<% _.each(ois, function(oi) { %>" +
+    "<tr>" +
+    "<% if (oi['s:ownedThrough']) { %>" +
+        "<td style='color:grey'><span><%= oi['s:typeOfGood']['s:name'] %></span><br><small>(owned until <%= oi['s:ownedThrough'] %>)</small></td>" +
+    "<% } else { %>" +
+        "<td><%= oi['s:typeOfGood']['s:name'] %></td>" +
+    "<% } %>" +
+    "<td><input class='share' type='checkbox' value='<%= oi['s:typeOfGood'][\"@id\"] %>' checked></td>" +
+    "</tr>" +
+    "<% }); %>");
+
 var shareItemsDialogTpl = _.template("<div id='drawer_shareItemDialog' class='modal hide'>" +
     "<div class='modal-header'>" +
-    "<button type='button' class='close' data-dismiss='modal'>×</button><h3>laptopcase.biz is interested in items you own</h3></div>" +
+    "<button type='button' class='close' data-dismiss='modal'>×</button><h3>Acme Shop, Inc. (http://acmeshop.com/) is interested in items you own</h3></div>" +
     "<div class='modal-body'>" +
-    "<h6><%= items %></h6>" +
-    "<p>Do you want to share them?</p>" +
-    "<p><a class='btn btn-primary shareItemAction' href='#' data-name='<%= item.name %>' data-image-url='<%= item.imageUrl %>'>Yes</a>&nbsp;&nbsp;&nbsp;&nbsp;" +
-    "   <a class='btn btn-primary optOutAction' href='#' data-name='<%= item.name %>' data-image-url='<%= item.imageUrl %>'>No</a></p>" +
+    "<h5>Do you want to share the following list with Acme Shop, Inc.?</h5>" +
+    "<table class='table'><thead><tr><th>Item</th><th><small>Share?</small></th></tr></thead>" +
+    "<tbody>" +
+    "<%= itemtable %>" +
+    "</tbody>" +
+    "</table>" +
+    "<p><a class='btn btn-primary shareItemAction' href='#'>Yes</a>&nbsp;&nbsp;&nbsp;&nbsp;" +
+    "   <a class='btn btn-primary optOutAction' href='#'>No</a></p>" +
     "</div></div>");
 
     $(function() {
@@ -72,29 +88,31 @@ var shareItemsDialogTpl = _.template("<div id='drawer_shareItemDialog' class='mo
 
             gsh_sink_url = $link[0].href;
 
-            var items = [];
-
             $("<link type='text/css' rel='stylesheet' href='"+
                 chrome.extension.getURL("css/bootstrap.inpage.min.css")+"'>").appendTo("head");
             var ownershipInfo = shopping_history["@graph"][0]["s:owns"];
-            for (var i=0;i<ownershipInfo.length;i++) {
 
-                item = ownershipInfo[i]["@type"] == "s:OwnershipInfo" ? ownershipInfo[i]["s:typeOfGood"] : ownershipInfo[i];
-                if (item["s:name"]) {
-                    items.push(item["s:name"]);
-                }
-            }
-
-            $(shareItemsDialogTpl({items:items.join(", ")})).appendTo("body");
+            $(shareItemsDialogTpl({ itemtable: itemListTpl({ois:ownershipInfo})})).appendTo("body");
             var $m = $("#drawer_shareItemDialog");
             $m.modal();
             $(".shareItemAction").on("click", _.once(function() {
+
+                var sh_to_send = JSON.parse(JSON.stringify(shopping_history));
+
+                var share_ids = []
+                $("input.share:checked").each(function(idx,e) {
+                    share_ids.push($(e).val());
+                });
+
+                sh_to_send["@graph"][0]["s:owns"]= _.filter(sh_to_send["@graph"][0]["s:owns"], function(oi) {
+                    return oi["s:typeOfGood"] && (share_ids.indexOf(oi["s:typeOfGood"]["@id"]) >= 0);
+                });
 
                 $.ajax({
                     type: "POST",
                     url: gsh_sink_url,
                     headers: { "Content-Type" : "application/json"},
-                    data: JSON.stringify(shopping_history),
+                    data: JSON.stringify(sh_to_send),
                     processData: false,
                     success : function (data, status, jqxhr) {
                         $m.modal("hide");
@@ -166,6 +184,7 @@ var shopping_history = {
         "pto": "http://productontology.org/id/",
         "s": "http://schema.org/",
         "gr": "http://purl.org/goodrelations/v1#",
+        "xsd": "http://www.w3.org/2001/XMLSchema#",
         "rdfs": "http://www.w3.org/2000/01/rdf-schema#"
     },
     "@graph": [
@@ -174,101 +193,141 @@ var shopping_history = {
             "@type": "s:Person",
             "s:owns": [
                 {
-                    "s:ownedFrom": "2011-08-10T15:00:00",
-                    "s:typeOfGood": {
-                        "s:gtin13": "4710937385939",
-                        "s:name": "HTC Desire X",
-                        "s:brand": {
-                            "s:name": "HTC",
-                            "@id": "http://laszlotorok.info/htc",
-                            "@type": "s:Brand"
-                        },
-                        "gr:category": "Electronics > Communications > Telephony > Mobile Phones > Smartphones",
-                        "@id": "http://laszlotorok.info/htcdesire",
-                        "@type": [
-                            "gr:ProductOrService",
-                            "s:Product",
-                            "pto:Smartphone"
-                        ]
+                    "s:ownedFrom": {
+                        "@type": "xsd:dateTime",
+                        "@value": "2011-03-01T15:00:00"
                     },
-                    "@id": "_:b2",
-                    "@type": "s:OwnershipInfo",
-                    "s:ownedThrough": "2012-03-15T15:00:00"
-                },
-                {
-                    "s:ownedFrom": "2007-01-01T15:00:00",
-                    "@id": "_:b1",
-                    "@type": "s:OwnershipInfo",
-                    "s:typeOfGood": {
-                        "gr:category": "Vehicles & Parts",
-                        "s:brand": {
-                            "s:name": "Volkswagen",
-                            "@id": "http://laszlotorok.info/vw",
-                            "@type": "s:Brand"
-                        },
-                        "s:name": "VW Golf",
-                        "@id": "http://laszlotorok.info/vwgolf",
-                        "@type": [
-                            "pto:Automobile",
-                            "s:Product",
-                            "gr:ProductOrService"
-                        ]
-                    }
-                },
-                {
-                    "s:ownedFrom": "2011-03-01T15:00:00",
-                    "@id": "_:b3",
-                    "@type": "s:OwnershipInfo",
-                    "s:typeOfGood": {
-                        "s:gtin13": "4242003356364",
-                        "s:name": "VS06G2410",
-                        "s:brand": {
-                            "s:name": "Siemens",
-                            "@id": "http://laszlotorok.info/siemens",
-                            "@type": "s:Brand"
-                        },
-                        "gr:category": "Home & Garden > Household Appliances > Vacuums",
-                        "@id": "http://laszlotorok.info/vacuumcleaner",
-                        "@type": [
-                            "gr:ProductOrService",
-                            "pto:Vacuum_cleaner",
-                            "s:Product"
-                        ]
-                    }
-                },
-                {
-                    "s:ownedFrom": "2011-03-01T15:00:00",
-                    "@id": "_:b4",
+                    "@id": "_:b5",
                     "@type": "s:OwnershipInfo",
                     "s:typeOfGood": {
                         "s:gtin14": "00085854217958",
                         "s:name": "Laptop Messenger Bag",
                         "@id": "http://laszlotorok.info/lbag",
                         "@type": [
-                            "s:Product",
-                            "gr:ProductOrService"
+                            "gr:ProductOrService",
+                            "s:Product"
                         ]
                     }
                 },
                 {
-                    "s:ownedFrom": "2011-03-01T15:00:00",
+                    "s:ownedFrom": {
+                        "@type": "xsd:dateTime",
+                        "@value": "2011-08-10T15:00:00"
+                    },
+                    "s:typeOfGood": {
+                        "s:gtin13": "4710937385939",
+                        "s:name": "GTC Cheshire X",
+                        "s:brand": {
+                            "s:name": "GTC",
+                            "@id": "http://laszlotorok.info/gtc",
+                            "@type": "s:Brand"
+                        },
+                        "gr:category": "Electronics > Communications > Telephony > Mobile Phones > Smartphones",
+                        "@id": "http://laszlotorok.info/gtccheshire",
+                        "@type": [
+                            "gr:ProductOrService",
+                            "pto:Smartphone",
+                            "s:Product"
+                        ]
+                    },
+                    "@id": "_:b2",
+                    "@type": "s:OwnershipInfo",
+                    "s:ownedThrough": {
+                        "@type": "xsd:dateTime",
+                        "@value": "2012-03-15T15:00:00"
+                    }
+                },
+                {
+                    "s:ownedFrom": {
+                        "@type": "xsd:dateTime",
+                        "@value": "2007-01-01T15:00:00"
+                    },
+                    "@id": "_:b1",
+                    "@type": "s:OwnershipInfo",
+                    "s:typeOfGood": {
+                        "gr:category": "Vehicles & Parts",
+                        "s:brand": {
+                            "s:name": "Peopleswagen",
+                            "@id": "http://laszlotorok.info/pw",
+                            "@type": "s:Brand"
+                        },
+                        "s:name": "PW Gulf",
+                        "@id": "http://laszlotorok.info/pwgulf",
+                        "@type": [
+                            "gr:ProductOrService",
+                            "pto:Automobile",
+                            "s:Product"
+                        ]
+                    }
+                },
+                {
+                    "s:ownedFrom": {
+                        "@type": "xsd:dateTime",
+                        "@value": "2012-03-10T08:00:00"
+                    },
+                    "@id": "_:b3",
+                    "@type": "s:OwnershipInfo",
+                    "s:typeOfGood": {
+                        "s:gtin13": "4000000000000",
+                        "s:name": "uPhone 5",
+                        "s:brand": {
+                            "s:name": "Upple",
+                            "@id": "http://laszlotorok.info/upple",
+                            "@type": "s:Brand"
+                        },
+                        "gr:category": "Electronics > Communications > Telephony > Mobile Phones > Smartphones",
+                        "@id": "http://laszlotorok.info/uphone5",
+                        "@type": [
+                            "pto:Smartphone",
+                            "s:ProductModel",
+                            "s:Product"
+                        ]
+                    }
+                },
+                {
+                    "s:ownedFrom": {
+                        "@type": "xsd:dateTime",
+                        "@value": "2011-03-01T15:00:00"
+                    },
                     "@id": "_:b0",
                     "@type": "s:OwnershipInfo",
                     "s:typeOfGood": {
                         "s:gtin13": "0885909296880",
-                        "s:name": "Macbook Pro",
+                        "s:name": "Micbook",
                         "s:brand": {
-                            "s:name": "Apple",
-                            "@id": "http://laszlotorok.info/apple",
-                            "@type": "s:Brand"
+                            "@id": "http://laszlotorok.info/upple"
                         },
                         "gr:category": "Electronics > Computers > Laptops",
-                        "@id": "http://laszlotorok.info/macbookpro",
+                        "@id": "http://laszlotorok.info/micbook",
                         "@type": [
-                            "s:Product",
                             "pto:Laptop",
                             "pto:Macbook",
-                            "gr:ProductOrService"
+                            "gr:ProductOrService",
+                            "s:Product"
+                        ]
+                    }
+                },
+                {
+                    "s:ownedFrom": {
+                        "@type": "xsd:dateTime",
+                        "@value": "2011-03-01T15:00:00"
+                    },
+                    "@id": "_:b4",
+                    "@type": "s:OwnershipInfo",
+                    "s:typeOfGood": {
+                        "s:gtin13": "4242003356364",
+                        "s:name": "Vacuum Cleaner VS06G2410",
+                        "s:brand": {
+                            "s:name": "Ziemens",
+                            "@id": "http://laszlotorok.info/ziemens",
+                            "@type": "s:Brand"
+                        },
+                        "gr:category": "Home & Garden > Household Appliances > Vacuums",
+                        "@id": "http://laszlotorok.info/vacuumcleaner",
+                        "@type": [
+                            "pto:Vacuum_cleaner",
+                            "gr:ProductOrService",
+                            "s:Product"
                         ]
                     }
                 }
