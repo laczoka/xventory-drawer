@@ -55,7 +55,7 @@ var itemListTpl = _.template(
     "<% _.each(ois, function(oi) { %>" +
     "<tr>" +
     "<% if (oi['s:ownedThrough']) { %>" +
-        "<td style='color:grey'><span><%= oi['s:typeOfGood']['s:name'] %></span><br><small>(owned until <%= oi['s:ownedThrough'] %>)</small></td>" +
+        "<td style='color:grey'><span><%= oi['s:typeOfGood']['s:name'] %></span><br><small>(owned until <%= oi['s:ownedThrough']['@value'] %>)</small></td>" +
     "<% } else { %>" +
         "<td><%= oi['s:typeOfGood']['s:name'] %></td>" +
     "<% } %>" +
@@ -111,7 +111,7 @@ var shareItemsDialogTpl = _.template("<div id='drawer_shareItemDialog' class='mo
                 $.ajax({
                     type: "POST",
                     url: gsh_sink_url,
-                    headers: { "Content-Type" : "application/json"},
+                    headers: { "Content-Type" : "application/ld+json"},
                     data: JSON.stringify(sh_to_send),
                     processData: false,
                     success : function (data, status, jqxhr) {
