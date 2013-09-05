@@ -1,11 +1,11 @@
 {
 	"manifest_version" : 2,
     "name":"Drawer",
-    "version":"0.1.2",
+    "version":"0.2.0",
     "description":"Organize your personal items",
     "update_url": "http://purl.org/xventory/drawer/updates.xml",
     "content_security_policy" : "script-src 'self' 'unsafe-eval'; object-src 'self'",
-    "permissions" : ["https://*/","http://*/"],
+    "permissions" : ["https://*/","http://*/", "tabs"],
     "icons":{
         "128":"img/drawer_logo.png"
     },
@@ -15,25 +15,30 @@
     "content_scripts":[
         {
             "matches":["<all_urls>"],
-            "js":["js/jquery-1.9.1.min.js", "js/bootstrap.inpage.min.js", "js/rdf_store.js", "js/underscore.min.js", "js/gsh-detect.js" ],
-            "css": ["css/style.css","css/bootstrap.inpage.min.css"],
+            "js":["js/jquery-2.0.3.min.js", "bootstrap.inpage/js/bootstrap.min.js",
+                  "js/underscore-1.5.1.min.js", "js/gsh-detect.js"],
+            "css": ["css/style.css"
+                    //,"bootstrap.inpage/css/bootstrap.min.css"
+                    ],
             "all_frames":false,
 			"run_at": "document_end"
         }
-    ],   /*
+    ],
 
-    "page_action":{
-        "default_title":"This shop is interested in stuff you bought in the past.",
-        "default_icon":"img/logo_128x128_active.png",
-        "default_popup":"background.html"
-    },     */
+    "browser_action":{
+        //"default_title":"This shop is interested in stuff you bought in the past.",
+        "default_icon" : "img/drawer_logo.png",
+        "default_popup" : "itemmanager.html"
+    },
     //"browser_action":{
     //    "default_icon" : "img/drawer_logo.png",
     //    "default_title" : "Drawer - Your personal inventory",
     //    "default_popup" : "background.html"
     //},
 	"web_accessible_resources" : [
-		"js/jquery-1.9.1.min.js", "js/bootstrap.inpage.min.js",
-		"js/rdf_store.js", "js/underscore.min.js", "js/gsh-detect.js",
-		"css/style.css","css/bootstrap.inpage.min.css"]
+		"js/jquery-2.0.3.min.js", "js/jquery-2.0.3.min.map",
+        "js/underscore-1.5.1.min.js", "js/underscore-1.5.1.min.map",
+        "js/gsh-detect.js",
+		"css/style.css","bootstrap.inpage/css/bootstrap.min.css"
+    ]
 }

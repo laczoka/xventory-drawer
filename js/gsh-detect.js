@@ -10,30 +10,6 @@ drawer.sendToStore = function(data, callback) {
     chrome.extension.sendMessage(data, callback);
 }
 
-var pageStore = rdfstore.create({persistent:false, name:'drawer_temp', overwrite:true}, function () { });
-
-// currently in use
-var allOffersFromStoreSparql = "PREFIX gr: <http://purl.org/goodrelations/v1#> \
-                               PREFIX foaf: <http://xmlns.com/foaf/0.1/> \
-                               SELECT ?name ?product_name ?imageUrl WHERE { ?offer a gr:Offering. \
-                                                              ?offer gr:name ?name. \
-                                                              OPTIONAL \
-                                                              { ?offer gr:includesObject ?tqn.\
-                                                                ?tqn gr:typeOfGood ?product.\
-                                                                ?product gr:name ?product_name.\
-                                                                ?product foaf:depiction ?imageUrl\
-                                                              } }";
-
-// alt. query
-var allItemsFromStoreSparql = "PREFIX gr: <http://purl.org/goodrelations/v1#> \
-                               PREFIX foaf: <http://xmlns.com/foaf/0.1/> \
-                               SELECT ?name ?imageUrl WHERE { {?p a gr:ProductOrService. }\
-                                                               UNION {?p a gr:ProductOrServiceModel. }\
-                                                               UNION {?p a gr:SomeItems. } \
-                                                              ?p gr:name ?name. \
-                                                              OPTIONAL \
-                                                              { ?p foaf:depiction ?imageUrl } }";
-
 var addItemOpenDialogTpl = _.template("<div class='addItemOpenDialog'><a id='drawer_addItemOpenDialog' class='btn btn-info' data-toggle='modal' href='#drawer_addItemDialog'>++ Items ++</a></div>");
 
 var addItemDialogTpl = _.template("" +
@@ -89,7 +65,7 @@ var shareItemsDialogTpl = _.template("<div id='drawer_shareItemDialog' class='mo
             gsh_sink_url = $link[0].href;
 
             $("<link type='text/css' rel='stylesheet' href='"+
-                chrome.extension.getURL("css/bootstrap.inpage.min.css")+"'>").appendTo("head");
+                chrome.extension.getURL("bootstrap.inpage/css/bootstrap.min.css")+"'>").appendTo("head");
             var ownershipInfo = shopping_history["@graph"][0]["s:owns"];
 
             $(shareItemsDialogTpl({ itemtable: itemListTpl({ois:ownershipInfo})})).appendTo("body");
@@ -153,7 +129,7 @@ $(document).ready(function() {
 
                                     // add css
                                     $("<link type='text/css' rel='stylesheet' href='"+
-                                        chrome.extension.getURL("css/bootstrap.inpage.min.css")+"'>").appendTo("head");
+                                        chrome.extension.getURL("bootstrap.inpage/css/bootstrap.min.css")+"'>").appendTo("head");
 
                                     $(addItemOpenDialogTpl()).appendTo("body");
                                     $(addItemDialogTpl({items:items})).appendTo("body");

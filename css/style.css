@@ -4,3 +4,9 @@
     right: 40px;
     z-index: 10000000;
 }
+
+.tab-pane {
+    min-height: 300px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+}

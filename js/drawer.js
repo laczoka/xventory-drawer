@@ -1,8 +1,40 @@
-// UI
-function PinventoryViewModel(db) {
+function Drawer() {
     var self = this;
-    self.pitems = ko.observableArray([]);
+    self._db = window.localStorage;
 
+    self.items = ko.observableArray(self._db["Pinventory"] ? JSON.parse(self._db["Pinventory"]) : []);
+
+    self.save = function() {
+        self._db["Pinventory"] = JSON.stringify(self.items());
+    };
+
+    self.addItem = function(newItem) {
+       var productID = _.intersection(['gtin8', 'gtin13', 'gtin14', 'asin'], _.keys(newItem)).pop();
+
+       if (productID && _.find(self.items, function(i)
+                            { return i[productID] && i[productID] == newItem[productID]; })) {
+           // already in the list
+       } else {
+           self.items.push(newItem);
+       }
+    };
+    self.addItems = function(newItemsArr) {
+        _.each(newItemsArr,self.addItem);
+    };
+
+    self.deleteAll = function() {
+        self._db["Pinventory"] = JSON.stringify([]);
+        self.pitems.removeAll();
+    };
+}
+
+drawer = new Drawer();
+
+function PinventoryViewModel(drawer) {
+    var self = this;
+    self.pitems = drawer.items;
+
+    // UI
     self.noPItemsYet = ko.computed(function () {
         return self.pitems().length < 1;
     });
@@ -13,32 +45,11 @@ function PinventoryViewModel(db) {
         self.showNotification("success", "Just added a "+newItem.name+" to your inventory.")
     };
 
-    // process command from the UI
-    self.addNewItem = function (itemdata) {
-        drawer.store.addItem(db, drawer.Item.createFromFreebaseHint(itemdata), self.itemAdded);
-    };
-
     self.candidateItem = ko.observable(null);
 
-    self.setCandidateItem = function (itemdata) {
-        var item = drawer.Item.createFromFreebaseHint(itemdata);
-        self.candidateItem(item);
-    };
-    self.addCandidateItem = function() {
-        var newItem = self.candidateItem();
-        if (newItem !== null) {
-            self.addNewItem(newItem);
-        }
-        self.candidateItem(null);
-    };
     self.deleteAllItems = function() {
         if (confirm("This operation will remove all items from your personal inventory and CAN'T be undone!")) {
-            drawer.store.clear(drawer.store.DB, function(result)
-            {
-                if (result == success) {
-                    self.pitems.removeAll();
-                }
-            });
+            drawer.deleteAll();
         }
     };
 
@@ -55,42 +66,26 @@ function PinventoryViewModel(db) {
         }
     };
 
+    self.formatDate = function(dt) {
+        var d = new Date(dt);
+        return d.toDateString();
+    };
+
     // init
     // with notifications disabled
     self.notificationsEnabled = false;
-    drawer.store.getItems(db, function(success, items) {
-        if (success) {
-            $.each(items, function(idx, val) {
-                self.itemAdded({ name: val.name.value, imageUrl: val.imageUrl.value });
-            });
-        }
-    });
     // turned back on
     self.notificationsEnabled = true;
 }
 
 // setup loop
 $(function () {
-    var VM = new PinventoryViewModel(drawer.store.DB);
+    var VM = new PinventoryViewModel(drawer);
 
-    ko.applyBindings(VM);
+    ko.applyBindings(VM, document.getElementById("inventoryTab"));
 
-    $("#new_gadget_name")
-        .suggest({"key":"AIzaSyCi0UfQrWCpa2hfslt7w-e6GhABQO_Pvoc"})
-        .bind("fb-select", function (e, data) {
-            VM.setCandidateItem(data);
-        });
-    $("body").on({
-        "click":function() {
-            VM.addCandidateItem();
-        }
-    }, "#add_new_gadget_action");
-    $("#reset_store").on("click",function() {
+    $("#emptyInventoryBtn").on("click",function() {
         VM.deleteAllItems();
-    });
-    $("#jump_to_add_new").on("click", function(e) {
-        e.preventDefault();
-        $('#navibar a[href="#add_new_item_tab"]').tab('show');
     });
 
 });
