@@ -10,18 +10,19 @@
 </head>
 <body style="width:800px;height:100%">
 <div class="container">
-    <ul class="nav nav-pills">
-        <li class="active">
-            <a href="#inventoryTab" data-toggle="tab">My inventory</a></li>
-        <li><a href="#importTab" data-toggle="tab">Import</a></li>
-        <li><a href="#advancedTab" data-toggle="tab">Advanced</a></li>
-    </ul>
+        <ul class="nav nav-pills">
+            <li class="active">
+                <a href="#inventoryTab" data-toggle="tab">My inventory</a></li>
+            <li><a href="#importTab" data-toggle="tab">Import</a></li>
+            <li><a href="#advancedTab" data-toggle="tab">Advanced</a></li>
+            <li><a id="closeWindow" href="#" class="btn btn-default">Close</a></li>
+        </ul>
     <div class="tab-content">
         <div class="tab-pane active" id="inventoryTab">
             <!-- ko foreach: pitems -->
             <div class="row">
                 <div class="col-sm-2">
-                    <img data-bind="attr: { src: image }" src="http://placehold.it/90x160" class="img-thumbnail">
+                    <img data-bind="attr: { src: image }" src="http://placehold.it/100x79" class="img-thumbnail">
                 </div>
                 <div class="col-sm-8">
                     <h5 style="text-align: center" data-bind="text: name"></h5>
@@ -50,22 +51,26 @@
             <h4>Import a list of your purchases from <img src="img/amazon_logo.jpg"></h4>
             <div class="row">
                 <div class="col-md-6">
+                    <p>
                     <button id="import_amazon_items" class="btn btn-default"
                             data-bind="
                 text: importTabActionBtnLabel,
                 disable: importTabActionBtnDisabled,
                 visible: importState() != 'IMPORT_DONE'">Go to Amazon Order History
                     </button>
-
-                    <div class="progress progress-striped active" data-bind="visible: importState() == 'IMPORT_IN_PROGRESS'">
+                    </p>
+                    <div data-bind="visible: importState() == 'IMPORT_IN_PROGRESS' ">Found <span
+                            data-bind="text: importTabImportCount">0</span> item(s)...</p>
+                    <div class="progress progress-striped active">
                         <div class="progress-bar"  role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
                             <span class="sr-only">In progress...</span>
                         </div>
                     </div>
+                    </div>
 
 
                     <p data-bind="visible: importState() == 'IMPORT_DONE' ">Imported <span
-                            data-bind="text: importTabImportCount"></span> item(s).</p>
+                            data-bind="text: importTabImportCount">0</span> item(s).</p>
                 </div>
             </div>
         </div>

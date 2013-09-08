@@ -11,20 +11,23 @@ function Drawer() {
     self.addItem = function(newItem) {
        var productID = _.intersection(['gtin8', 'gtin13', 'gtin14', 'asin'], _.keys(newItem)).pop();
 
-       if (productID && _.find(self.items, function(i)
-                            { return i[productID] && i[productID] == newItem[productID]; })) {
-           // already in the list
-       } else {
+       var product_found_in_inventory = productID && _.find(self.items(),
+           function(i) {
+            return i[productID] && (i[productID] == newItem[productID]); });
+
+       if (product_found_in_inventory === undefined) {
            self.items.push(newItem);
        }
+       return product_found_in_inventory === undefined;
     };
+
     self.addItems = function(newItemsArr) {
-        _.each(newItemsArr,self.addItem);
+        return _.map(newItemsArr,self.addItem);
     };
 
     self.deleteAll = function() {
         self._db["Pinventory"] = JSON.stringify([]);
-        self.pitems.removeAll();
+        self.items.removeAll();
     };
 }
 
@@ -68,7 +71,7 @@ function PinventoryViewModel(drawer) {
 
     self.formatDate = function(dt) {
         var d = new Date(dt);
-        return d.toDateString();
+        return d ? d.toDateString() : "N/A";
     };
 
     // init
@@ -87,5 +90,7 @@ $(function () {
     $("#emptyInventoryBtn").on("click",function() {
         VM.deleteAllItems();
     });
+
+    $("#closeWindow").on("click", function() { window.close();});
 
 });
