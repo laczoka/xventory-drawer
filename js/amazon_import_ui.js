@@ -1,5 +1,6 @@
 // CONSTANTS
 var AMAZON_PURCHASE_HISTORY_URL = "https://www.amazon.de/gp/css/order-history/ref=oss_pagination_1_2?ie=UTF8";
+
 var PLACEHOLDER_IMG_100x79_URL = "http://placehold.it/100x79";
 
 
@@ -26,7 +27,6 @@ function ImportStateMachine(drawer, vm) {
 
     self.fetch_next_page = function () {
         var url = AMAZON_PURCHASE_HISTORY_URL + "&orderFilter="+self.current_year + "&startIndex=" + self.current_page_offset;
-        //var url = "https://www.amazon.de/gp/css/order-history/ref=oss_pagination_1_2?ie=UTF8&orderFilter=year-2011&search=&startIndex=10";
         console.log("Fetching "+url);
         $.get(url)
             .done(self.on_page_received)
@@ -48,12 +48,12 @@ function ImportStateMachine(drawer, vm) {
 
     self.on_page_received = function (page_data) {
 
-        self.years_extracted = true; // TODO remove this line
-
         if (!self.years_extracted) {
             self.years_to_extract = self.getYears($(page_data));
-            self.currenty_year = self.years_to_extract.pop();
+            self.current_year = self.years_to_extract.pop();
             self.years_extracted = true;
+            self.fetch_next_page();
+            return;
         }
 
         var productsFound = self.amazon_scrape_content($(page_data));
@@ -61,10 +61,14 @@ function ImportStateMachine(drawer, vm) {
         console.log(productsFound);
 
         if (productsFound.length > 0) {
-            self.vm.importCount(self.vm.importCount() + productsFound.length);
 
-            var newItems = _.self.drawer.addItems(productsFound);
+            var itemsAdded = self.drawer.addItems(productsFound);
             self.drawer.save();
+
+            var newItemCount = _.filter(itemsAdded, function(i) { return i == true;}).length;
+
+            self.vm.importCount(self.vm.importCount() + newItemCount);
+
             self.current_page_offset += 10;
 
             self.fetch_next_page();
@@ -158,7 +162,7 @@ function translate_month(datestr) {
     return datestr
         .replace(/Januar/i, "January")
         .replace(/Februar/i, "February")
-        .replace("ärz", "arch")
+        .replace("\u00e4rz", "arch")
         .replace(/Mai/i, "May")
         .replace(/Juni/i, "June")
         .replace(/Juli/i, "July")

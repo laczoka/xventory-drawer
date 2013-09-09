@@ -15,10 +15,10 @@ function Drawer() {
            function(i) {
             return i[productID] && (i[productID] == newItem[productID]); });
 
-       if (product_found_in_inventory === undefined) {
+       if (!product_found_in_inventory) {
            self.items.push(newItem);
        }
-       return product_found_in_inventory === undefined;
+       return !product_found_in_inventory;
     };
 
     self.addItems = function(newItemsArr) {
@@ -51,9 +51,15 @@ function PinventoryViewModel(drawer) {
     self.candidateItem = ko.observable(null);
 
     self.deleteAllItems = function() {
-        if (confirm("This operation will remove all items from your personal inventory and CAN'T be undone!")) {
-            drawer.deleteAll();
-        }
+        drawer.deleteAll();
+    };
+
+    self.sortItemsMostRecentFirst = function() {
+        self.pitems.sort(function(left,right) {
+           var ld = left.ownedFrom ? left.ownedFrom : 0;
+           var rd = right.ownedFrom ? right.ownedFrom : 0;
+           return ld == rd ? 0 : (ld < rd ? 1 : -1);
+        });
     };
 
     // Notification support
@@ -89,6 +95,10 @@ $(function () {
 
     $("#emptyInventoryBtn").on("click",function() {
         VM.deleteAllItems();
+    });
+
+    $("#sortByDateDesc").on("click", function() {
+       VM.sortItemsMostRecentFirst();
     });
 
     $("#closeWindow").on("click", function() { window.close();});
