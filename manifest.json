@@ -16,7 +16,8 @@
         {
             "matches":["<all_urls>"],
             "js":["js/jquery-2.0.3.min.js", "bootstrap.inpage/js/bootstrap.min.js",
-                  "js/underscore-1.5.1.min.js", "js/gsh-detect.js"],
+                  "js/underscore-1.5.2.js", "js/gsh-detect.js",
+                  "js/amazon_import_ui.js"  ], // just for testing
             "css": ["css/style.css"
                     //,"bootstrap.inpage/css/bootstrap.min.css"
                     ],
@@ -37,7 +38,7 @@
     //},
 	"web_accessible_resources" : [
 		"js/jquery-2.0.3.min.js", "js/jquery-2.0.3.min.map",
-        "js/underscore-1.5.1.min.js", "js/underscore-1.5.1.min.map",
+        "js/underscore-1.5.2.js",
         "js/gsh-detect.js",
 		"css/style.css","bootstrap.inpage/css/bootstrap.min.css"
     ]

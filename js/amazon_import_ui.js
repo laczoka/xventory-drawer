@@ -14,26 +14,24 @@ function visit_amazon_purchase_history() {
     });
 }
 
+var async = {};
+// asyncfunc :- aggr -> x -> Defered(aggr)
+async.reduce = function (coll, asyncfunc, aggrv) {
+    return (_.isArray(coll) && coll.length > 0) ?
+        _.reduce(coll.slice(1),function(comp, x) {
+            return comp.then(function(aggrv) { return asyncfunc(aggrv, x) });
+        }, asyncfunc(aggrv, coll[0]))
+        : []
+};
+
 function ImportStateMachine(drawer, vm) {
     var self = this;
 
     self.vm = vm;
     self.drawer = drawer;
 
-    self.years_extracted = false;
-    self.years_to_extract = [];
-    self.current_year = undefined;
-    self.current_page_offset = 0;
-
-    self.fetch_next_page = function () {
-        var url = AMAZON_PURCHASE_HISTORY_URL + "&orderFilter="+self.current_year + "&startIndex=" + self.current_page_offset;
-        console.log("Fetching "+url);
-        $.get(url)
-            .done(self.on_page_received)
-            .fail(function() { alert("Error occured during the import! Operation aborted.");});
-    };
-
-    self.getYears = function($page) {
+    self.get_years = function(page_data) {
+        var $page = $(page_data);
         var years = $("#orderFilter option", $page)
             .filter(function() {
                 return /year-[0-9]{4}/i.test($(this).val());
@@ -45,47 +43,8 @@ function ImportStateMachine(drawer, vm) {
         return years;
     };
 
-
-    self.on_page_received = function (page_data) {
-
-        if (!self.years_extracted) {
-            self.years_to_extract = self.getYears($(page_data));
-            self.current_year = self.years_to_extract.pop();
-            self.years_extracted = true;
-            self.fetch_next_page();
-            return;
-        }
-
-        var productsFound = self.amazon_scrape_content($(page_data));
-
-        console.log(productsFound);
-
-        if (productsFound.length > 0) {
-
-            var itemsAdded = self.drawer.addItems(productsFound);
-            self.drawer.save();
-
-            var newItemCount = _.filter(itemsAdded, function(i) { return i == true;}).length;
-
-            self.vm.importCount(self.vm.importCount() + newItemCount);
-
-            self.current_page_offset += 10;
-
-            self.fetch_next_page();
-
-        } else if (self.years_to_extract.length > 0) {
-            self.current_year = self.years_to_extract.pop();
-            self.current_page_offset = 0;
-
-            self.fetch_next_page();
-
-        } else {
-            self.vm.importState(self.vm.IMPORT_DONE);
-        }
-    };
-
-    self.amazon_scrape_content = function($content) {
-
+    self.scan_page_for_items = function(page_data) {
+        var $content = $(page_data);
         var product_batches = $(".action-box",$content).map(function(idx,e) {
 
             var links = $("a",e).map(function(idx,e) {
@@ -147,15 +106,145 @@ function ImportStateMachine(drawer, vm) {
             return product_batch;
         });
         return _.flatten(product_batches);
+    };
+
+    self.get_items_from_page = function(items_by_asin_already_found, url, start_index) {
+        start_index = start_index || 0;
+        var retrieve_url = url+"&startIndex="+start_index;
+        return $.get(retrieve_url)
+            .then(function(page_data) {
+                var new_items = self.scan_page_for_items(page_data);
+                var new_items_by_asin = _.indexBy(new_items, "asin");
+
+                // DIRTY shortcut
+                self.vm.scannedItemCount(self.vm.scannedItemCount()+new_items.length);
+
+                return new_items.length > 0 ?
+                    self.get_items_from_page(
+                        _.extend(items_by_asin_already_found, new_items_by_asin), url, start_index+10) // RECURSE
+                        : items_by_asin_already_found; },                           // BASE CASE
+                  function () {
+                    console.log("Error retrieving: "+retrieve_url);
+                    return {};});
+    };
+
+
+    self.get_items = function(years_arr) {
+        var item_page_urls = _.map(years_arr, function(year_opt) {
+            return AMAZON_PURCHASE_HISTORY_URL + "&orderFilter="+year_opt;});
+
+        var getting_items = async.reduce(item_page_urls, self.get_items_from_page, {});
+
+        return getting_items.then(function(items_by_asin) { return _.values(items_by_asin)});
     }
+
+    /*
+    // TODO REMOVE
+    self.fetch_next_order_page = function(order_page_url) {
+
+        var url = order_page_url || self.order_pages_to_fetch.pop();
+        if (!url) return;
+
+        if (self.fetching_order_page && self.fetching_order_page.status() == "pending") {
+         // enqueue
+            self.order_pages_to_fetch.push(order_page_url);
+        } else {
+         // fetch next
+            self.fetching_order_page = $.get(order_page_url)
+                .done(
+                // move this to extract_price
+                function(data) {
+                    var prices = self.scan_prices($(data));
+                    _.each(prices, function)
+                    // take next from the queue if available
+                    self.fetch_next_order_page();
+                })
+                .fail(function () {
+                    console.log("Error retrieving order page");
+                });
+        }
+    };
+    // TODO remove
+    self.fetch_next_page = function () {
+        var url = AMAZON_PURCHASE_HISTORY_URL + "&orderFilter="+self.current_year + "&startIndex=" + self.current_page_offset;
+        console.log("Fetching "+url);
+        $.get(url)
+            .done(self.extract_items)
+            .fail(function() { alert("Error occured during the import! Operation aborted.");});
+    };
+
+    // TODO remove
+    self.extract_items = function (page_data) {
+        var productsFound = self.amazon_scrape_content($(page_data));
+
+        console.log(productsFound);
+
+        if (productsFound.length > 0) {
+
+            var itemsAdded = self.drawer.addItems(productsFound);
+            self.drawer.save();
+
+            var newItemCount = _.filter(itemsAdded, function(i) { return i == true;}).length;
+
+            self.vm.scannedItemCount(self.vm.scannedItemCount() + newItemCount);
+
+            self.current_page_offset += 10;
+
+            self.fetch_next_page();
+
+        } else if (self.years_to_extract.length > 0) {
+            self.current_year = self.years_to_extract.pop();
+            self.current_page_offset = 0;
+
+            self.fetch_next_page();
+
+        } else {
+        }
+    }; */
+
+
+   /*     self.scan_prices = function($page_data) {
+
+        var item_pricestr_arr = $("a", $page_data)
+            .filter(function(i) {
+                return /product\/[0-9A-Z]+/.test($(this).attr("href")); })
+            .map(function (idx, e) {
+                var asin = $(e).attr("href").match(/product\/([0-9A-Z]+)/)[1];
+                return {
+                    asin : asin,
+                    price : $(e).parents("td").first().next("td").text().trim()
+                }; });
+
+        var price_currency = _.map(item_pricestr_arr, function(item_pricestr) {
+            var pricestr = item_pricestr.price;
+            var currency_res = pricestr.match(/(EUR|\u20ac)/i);
+            var currency = _.isArray(currency_res) ? currency_res[0] : undefined;
+            var amount_res = pricestr.replace(",",".").match(/[0-9]+(\.[0-9]{1,2})?/);
+            var amount = _.isArray(amount_res) ? parseFloat(amount_res[0]) : undefined;
+            return currency && amount ? _.extend(item_pricestr, {price : { amount: amount, currency: currency } }) : undefined;
+        });
+
+        return _.without(price_currency, undefined);
+    }; */
+
+    self.start = function() {
+        self.vm.importState(vm.IMPORT_IN_PROGRESS);
+        return $.get(AMAZON_PURCHASE_HISTORY_URL)
+                .then(self.get_years, function(){console.log("Error retrieving page"); }) // TODO
+                .then(self.get_items, function(){console.log("Error extracting years page"); }) // TODO
+                .then(function(items) {
+                // maybe move this to a separate function representing the final step in the flow of computation
+                    var itemsAdded = self.drawer.addItems(_.values(items));
+                    var newItemCount = _.filter(itemsAdded,function(b) {return b}).length;
+                    self.drawer.save();
+                    self.vm.importTabImportCount(newItemCount);
+                    self.vm.importState(self.vm.IMPORT_DONE);});
+    };
 }
 
 function start_importing_purchase_history(vm) {
     var import_sm = new ImportStateMachine(drawer, vm);
-    vm.importState(vm.IMPORT_IN_PROGRESS);
-    $.get(AMAZON_PURCHASE_HISTORY_URL)
-        .done(import_sm.on_page_received)
-        .fail(function() {console.log("Error retrieving page"); });
+    import_sm.start();
 }
 
 function translate_month(datestr) {
@@ -181,7 +270,7 @@ function importTabVM() {
     self.IMPORT_DONE = "IMPORT_DONE";
 
     this.importState = ko.observable("IDLE");
-    this.importCount = ko.observable(0);
+    this.scannedItemCount = ko.observable(0);
 
     this.importTabActionBtnLabel = ko.computed(function() {
         var lab = {
@@ -197,9 +286,7 @@ function importTabVM() {
         return s == self.WAIT_LOGIN || s == self.IMPORT_IN_PROGRESS;
     } );
 
-    this.importTabImportCount = ko.computed(function() {
-       return self.importCount();
-    });
+    this.importTabImportCount = ko.observable(0);
 }
 // INIT
 $(function() {
