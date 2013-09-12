@@ -12,14 +12,22 @@
 <div class="container">
         <ul class="nav nav-pills">
             <li class="active">
-                <a href="#inventoryTab" data-toggle="tab">My inventory</a></li>
-            <li><a href="#importTab" data-toggle="tab">Import</a></li>
-            <li><a href="#advancedTab" data-toggle="tab">Advanced</a></li>
-            <li><a id="closeWindow" href="#" class="btn btn-default">Close</a></li>
+                <a href="#inventoryTab" data-toggle="tab">
+                    <i class="glyphicon glyphicon-home"></i> My inventory</a></li>
+            <li><a href="#statsTab" data-toggle="tab">
+                    <i class="glyphicon glyphicon-stats"></i> Stats</a></li>
+            <li><a href="#importTab" data-toggle="tab">
+                <i class="glyphicon glyphicon-import"></i> Import</a></li>
+            <li><a href="#advancedTab" data-toggle="tab">
+                <i class="glyphicon glyphicon-wrench"></i> Settings</a></li>
+            <li><a id="closeWindow" href="#">
+                <i class="glyphicon glyphicon-remove"></i> Close</a></li>
         </ul>
     <div class="tab-content">
         <div class="tab-pane active" id="inventoryTab">
-            <button id="sortByDateDesc" class="btn btn-default">sort by date</button>
+            <div class="row" style="padding-bottom:10px">
+                <button id="sortByDateDesc" class="btn btn-default btn-xs">
+                <i class="glyphicon glyphicon-sort-by-attributes-alt"></i> sort by date</button></div>
             <!-- ko foreach: pitems -->
             <div class="row">
                 <div class="col-sm-2">
@@ -27,21 +35,23 @@
                 </div>
                 <div class="col-sm-8">
                     <h5 style="text-align: center" data-bind="text: name"></h5>
+                    <p>Bought <span class="badge" data-bind="text: count"></span> at <span class="label label-primary" data-bind="text: $data.acquiredFrom ? $data.acquiredFrom.name : 'N/A'"></span>&nbsp;
+                        <span class="label label-default" data-bind="if: $data['price']">for <span data-bind="text: count*price.amount"></span>&nbsp;
+                        <span data-bind="text: price.currency"></span></span></p>
                     <table class="table table-condensed">
                         <tr>
-                            <td>Owned since</td>
+                            <td><strong>Owned since</strong></td>
                             <td data-bind="text: $root.formatDate(ownedFrom)"></td>
                         </tr>
                         <tr>
-                            <td>ASIN</td>
+                            <td><strong>ASIN</strong></td>
                             <td data-bind="text: asin"></td>
                         </tr>
-
                     </table>
                 </div>
             </div>
             <!-- /ko -->
-            <div data-bind="visible: noPItemsYet()" class="row">
+            <div data-bind="if: noPItemsYet" class="row">
                 <p>There are no items in your inventory. <br>
                     Why not add one? <button class="btn btn-primary"><i class="glyphicon glyphicon-plus"></i> Add new item</button></p>
             </div>
@@ -49,27 +59,36 @@
 
 
         <div class="tab-pane" id="importTab">
-            <h4>Import a list of your purchases from <img src="img/amazon_logo.jpg"></h4>
+            <h4>Import a list of your purchases from <img data-bind="visible: importState() != 'IDLE' ,attr: { src : current_logo }" src=""></h4>
+            <div class="row">
+                <div data-bind="visible: importState() == 'IDLE'" class="col-md-6">
+                    <a class="gotoamazon" href="https://www.amazon.de/gp/css/order-history?ie=UTF8">
+                        <img class="img-thumbnail" alt="amazon.de" src="img/amazonde_logo.jpg"></a>&nbsp;
+                    <a class="gotoamazon" href="https://www.amazon.com/gp/css/order-history?ie=UTF8">
+                            <img class="img-thumbnail" alt="amazon.com" src="img/amazoncom_logo.jpg"></a>&nbsp;
+                    <a class="gotoamazon" href="https://www.amazon.co.uk/gp/css/order-history?ie=UTF8">
+                        <img class="img-thumbnail" alt="amazon.co.uk" src="img/amazonuk_logo.jpg"></a>
+                </div>
+            </div>
             <div class="row">
                 <div class="col-md-6">
                     <p>
                     <button id="import_amazon_items" class="btn btn-default"
                             data-bind="
-                text: importTabActionBtnLabel,
-                disable: importTabActionBtnDisabled,
-                visible: importState() != 'IMPORT_DONE'">Go to Amazon Order History
-                    </button>
+                                text: importTabActionBtnLabel,
+                             disable: importTabActionBtnDisabled,
+                             visible: importState() == 'RDY_TO_IMPORT' || importState() == 'IMPORT_IN_PROGRESS'">Start import</button>
                     </p>
-                    <div data-bind="visible: importState() == 'IMPORT_IN_PROGRESS'">
-                        <p>Found <span data-bind="text: scannedItemCount">0</span> item(s) sofar...</p>
-                    <div class="progress progress-striped active">
-                        <div class="progress-bar"  role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
-                            <span class="sr-only">In progress...</span>
+                    <div data-bind="if: importState() == 'IMPORT_IN_PROGRESS'">
+                        <p>Import may take up to a minute.</p>
+                        <p>Found <span data-bind="text: scannedItemCount">0</span> item(s) so far...</p>
+                        <div class="progress progress-striped active">
+                            <div class="progress-bar"  role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+                                <span class="sr-only">In progress...</span></div>
                         </div>
                     </div>
-                    </div>
 
-                    <div data-bind="visible: importState() == 'IMPORT_DONE'">
+                    <div data-bind="if: importState() == 'IMPORT_DONE'">
                     <p>Found <span data-bind="text: scannedItemCount">0</span> item(s).</p>
                     <p>Imported <span data-bind="text: importTabImportCount">0</span> new item(s).</p></div>
                 </div>
@@ -78,8 +97,8 @@
         <div class="tab-pane" id="advancedTab">
             <h4>For advanced users</h4>
             <p>
-                <button data-toggle="modal" href="#deleteAllItemsModal" class="btn btn-danger"><i class="glyphicon glyphicon-trash"></i> Empty
-                    inventory
+                <button data-toggle="modal" href="#deleteAllItemsModal" class="btn btn-danger">
+                    <i class="glyphicon glyphicon-trash"></i> Empty inventory
                 </button>
             </p>
         </div>

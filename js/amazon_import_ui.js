@@ -1,30 +1,43 @@
 // CONSTANTS
-var AMAZON_PURCHASE_HISTORY_URL = "https://www.amazon.de/gp/css/order-history/ref=oss_pagination_1_2?ie=UTF8";
-
 var PLACEHOLDER_IMG_100x79_URL = "http://placehold.it/100x79";
 
 // GLOBAL VARS ( I know, it's evil, but hey this is a prototype... )
 var $action_button = $('#import_amazon_items');
-var AmazonTab = null;
+//var AmazonTab = null;
 
-function visit_amazon_purchase_history() {
-    chrome.tabs.create({'url': AMAZON_PURCHASE_HISTORY_URL}, function(tab) {
-        AmazonTab = tab;
+function visit_amazon_purchase_history(evt) {
+    var amazon_url = $(evt.delegateTarget).attr("href");
+    chrome.tabs.create({'url': amazon_url}, function(tab) {
+    //    AmazonTab = tab;
     });
+    return false; // prevent default behaviour
 }
 
-function AmazonHistoryImporter(drawer, vm) {
+function AmazonHistoryImporter(AMAZON_PURCHASE_HISTORY_URL, drawer, vm) {
     var self = this;
+    self.AMAZON_PURCHASE_HISTORY_URL = AMAZON_PURCHASE_HISTORY_URL;
+
+    self.AmazonOrganisation = {
+        de: { name: "Amazon DE",
+              url: "https://www.amazon.de/"},
+        uk: { name: "Amazon UK",
+              url: "https://www.amazon.co.uk/"},
+        com: { name: "Amazon, Inc.",
+               url: "https://www.amazon.com/"}
+    }
+
+    var domain = /\.(com|uk|de)\//i.exec(AMAZON_PURCHASE_HISTORY_URL)[1];
+
+    self.acquiredFrom = self.AmazonOrganisation[domain] ? self.AmazonOrganisation[domain] : self.AmazonOrganisation["com"];
 
     self.drawer = drawer;
     self.vm = vm;
 
     // fetch_page :: url -> D(response)
     function fetch_page(url) {
-        //return $.get(url);
         return $.ajax({
             url: url,
-            beforeSend: function(jqxhr, settings) { jqxhr.requestURL = url; }})
+            beforeSend: function(jqxhr) { jqxhr.requestURL = url; }})
             .then(function(data,status,jqXHR) { return { data:data, url: jqXHR.requestURL }});
     }
     // parse_item_page :: response -> {order}
@@ -42,10 +55,15 @@ function AmazonHistoryImporter(drawer, vm) {
 
             order_link_patt.lastIndex = 0;
             var orderId = order_url && order_link_patt.exec(order_url)[1];
-            var order_url = order_url && (order_url[0] == "/") ? host+order_url : order_url;
+
+            order_url = order_url && (order_url[0] == "/") ? host+order_url : order_url;
 
             var links = $("a",e).map(function(idx,e) {
-                return { url: $(e).attr("href"), name: $(e).text().trim()  };
+                return {
+                    url: $(e).attr("href"),
+                    name: $(e).text().trim(),
+                    acquiredFrom: self.acquiredFrom
+                };
             });
 
             var productLinkPatt = /product\/([A-Z0-9]+)\//;
@@ -57,7 +75,7 @@ function AmazonHistoryImporter(drawer, vm) {
             // get count + post process name
             product_batch = _.map(product_batch, function(p) {
                 var name = p["name"];
-                var count_re = /^([0-9])+\s(of|von)/.exec();
+                var count_re = /^([0-9]+)\s*(of|von)/.exec(name);
                 p["count"] = count_re ? count_re[1] : 1;
                 // remove "[number] of ...." from the product name
                 p["name"] = name.replace(/^[0-9]+\s(of|von)\s+/,"");
@@ -73,9 +91,9 @@ function AmazonHistoryImporter(drawer, vm) {
             var date_of_purchase = _.find(date_candidates, function (dc){return !isNaN(dc);});
 
             if (date_of_purchase) {
-                product_batch = _.map(product_batch, function (p) { p["ownedFrom"] = new Date(date_of_purchase); return p;});
+                product_batch = _.map(product_batch,function(p){p["ownedFrom"]=(new Date(date_of_purchase)).getTime();return p; });
             } else {
-                product_batch = _.map(product_batch, function (p) { p["ownedFrom"] = ""; return p;});
+                product_batch = _.map(product_batch,function (p){p["ownedFrom"] = "";return p;});
             }
 
             // add asin
@@ -104,23 +122,20 @@ function AmazonHistoryImporter(drawer, vm) {
         return product_orders;
     }
 
-    // parse_order_page :: response -> {item}
+    // parse_order_page :: response -> {order}
     function parse_order_page(response) {
-        $page_data = $(response.data);
+        var $page_data = $(response.data);
         var orderId_re = /summary\/edit.*&orderID=([-0-9a-zA-Z]+)/i.exec(response.url);
         var orderId = orderId_re ? orderId_re[1] : undefined;
         var arr_items_pricestr = $("a", $page_data)
-            .filter(function(i) {
+            .filter(function() {
                 return /product\/[0-9A-Z]+/.test($(this).attr("href")); })
             .map(function (idx, e) {
                 var url = $(e).attr("href");
-                var raw_name = $(e).text().trim();
                 var asin = url.match(/product\/([0-9A-Z]+)/)[1];
                 return {
+                    category: [],
                     asin : asin,
-                    acquiredFrom: "http://www.amazon.com/",
-                    url : url,
-                    name : raw_name,
                     price : $(e).parents("td").first().next("td").text().trim()
                 }; });
 
@@ -141,14 +156,14 @@ function AmazonHistoryImporter(drawer, vm) {
             var items1_by_asin = _.indexBy(o1.items.slice(0),"asin"),
                 items2 = o2.items.slice(0);
 
-            items1 = _.values(_.reduce(items2, function(items_by_asin, item) {
+            o1.items = _.values(_.reduce(items2, function(items_by_asin, item) {
                 var asin = item["asin"];
                 if (asin && items_by_asin[asin]) {
                     items_by_asin[asin] = _.extend(items_by_asin[asin],item);
                 }
                 return items_by_asin;
             }, items1_by_asin));
-            o1.items = items1;
+            self.vm.scannedItemCount(self.vm.scannedItemCount() + o1.items.length);
             return o1;
         } else {
             return undefined;
@@ -159,9 +174,9 @@ function AmazonHistoryImporter(drawer, vm) {
         return coll && (_.size(coll) == 0);
     }
 
-    // get_items :: url -> D({item})
-    function get_items (url,start_index) {
-        var start_index = start_index || 0;
+    // get_orders :: url -> D({order})
+    function get_orders (url,start_index) {
+        start_index = start_index || 0;
         var url_to_fetch = url + "&startIndex="+start_index;
         var D_page = fetch_page(url_to_fetch);
         var D_arr_product_orders = (async.lift1(parse_item_page))(D_page);
@@ -178,12 +193,12 @@ function AmazonHistoryImporter(drawer, vm) {
             },
             // else
             function (D_arr_ext_product_orders) {
-                return (async.lift2(_.bind(Array.prototype.concat,[])))(D_arr_ext_product_orders, get_items(url, start_index+10));
+                return (async.lift2(_.bind(Array.prototype.concat,[])))(D_arr_ext_product_orders, get_orders(url, start_index+10));
             })(D_arr_ext_product_orders);
     }
 
-    function item_page_url_by_year(yearopt) {
-        return AMAZON_PURCHASE_HISTORY_URL+"&orderFilter="+yearopt;
+    function item_page_url_by_year(base_url, yearopt) {
+        return base_url+"&orderFilter="+yearopt;
     }
 
     // get_years :: page -> {year-option}
@@ -197,9 +212,8 @@ function AmazonHistoryImporter(drawer, vm) {
                 return $(e).val();
             })
             .toArray();
-        //return years;
-        // TODO DEBUG remove following line
-        return ["year-2013"];
+        return years;
+        //return ["year-2011"];
     }
 
     self.start = function() {
@@ -208,14 +222,15 @@ function AmazonHistoryImporter(drawer, vm) {
 
         var D_first_page = fetch_page(AMAZON_PURCHASE_HISTORY_URL);
         var D_arr_year_opts = (async.lift1(get_years))(D_first_page);
-        var D_arr_item_page_seed_urls = async.map(D_arr_year_opts, item_page_url_by_year);
-        var D_arr_D_arr_items = async.map(D_arr_item_page_seed_urls, get_items);
-        var D_arr_items = async.reduce(D_arr_D_arr_items, async.lift2(_.bind(Array.prototype.concat,[])),[]);
+        var D_arr_item_page_seed_urls = async.map(D_arr_year_opts, _.partial(item_page_url_by_year, AMAZON_PURCHASE_HISTORY_URL));
+        var D_arr_D_arr_orders = async.map(D_arr_item_page_seed_urls, function(url){return get_orders(url, 0)});
+        var D_arr_orders = async.reduce(D_arr_D_arr_orders, async.lift2(_.bind(Array.prototype.concat,[])),[]);
 
-        D_arr_items.then(function(arr_items) // cheat again :)
+        D_arr_orders.then(function(arr_orders) // cheat again :)
         {   // maybe move this to a separate function representing the final step in the flow of computation
-            var itemsAdded = self.drawer.addItems(_.values(arr_items));
-            var newItemCount = _.filter(itemsAdded,function(b) {return b}).length;
+            var arr_items = _.flatten(_.pluck(arr_orders, "items"));
+            var itemsAdded = self.drawer.addItems(arr_items);
+            var newItemCount = _.compact(itemsAdded).length;
             self.drawer.save();
             self.vm.importTabImportCount(newItemCount);
             self.vm.importState(self.vm.IMPORT_DONE);
@@ -225,11 +240,8 @@ function AmazonHistoryImporter(drawer, vm) {
 
 
 
-function start_importing_purchase_history(vm) {
-    //var import_sm = new ImportStateMachine(drawer, vm);
-    //import_sm.start();
-
-    var importer = new AmazonHistoryImporter(drawer,vm);
+function start_importing_purchase_history(amazon_url, drawer, vm) {
+    var importer = new AmazonHistoryImporter(amazon_url, drawer,vm);
     importer.start();
 }
 
@@ -242,12 +254,12 @@ function translate_month(datestr) {
         .replace(/Juni/i, "June")
         .replace(/Juli/i, "July")
         .replace(/Oktober/i, "October")
-        .replace(/Dezember/i, "October");
+        .replace(/Dezember/i, "December");
 }
 
 
 // KnockoutJS View Model
-function importTabVM() {
+function ImportTabVM() {
     var self = this;
     self.IDLE = "IDLE";
     self.WAIT_LOGIN = "WAIT_LOGIN";
@@ -258,12 +270,17 @@ function importTabVM() {
     this.importState = ko.observable("IDLE");
     this.scannedItemCount = ko.observable(0);
 
+    self.amazon_branch = ko.observable("de");
+    self.current_logo = ko.computed(function() {
+        return "img/amazon"+self.amazon_branch()+"_logo.jpg";
+    });
+
     this.importTabActionBtnLabel = ko.computed(function() {
         var lab = {
             "WAIT_LOGIN" : "Waiting for you to login...",
             "RDY_TO_IMPORT" : "Start importing purchase history",
             "IMPORT_IN_PROGRESS" : "Please wait, import in progress..."
-        }
+        };
         return lab[self.importState()] || "Go to Amazon Order History";
     });
 
@@ -275,20 +292,28 @@ function importTabVM() {
     this.importTabImportCount = ko.observable(0);
 }
 // INIT
-$(function() {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        var vm = new importTabVM();
-        if (/\/ap\/signin/.test(tabs[0].url)) {
-            vm.importState(vm.WAIT_LOGIN);
-        } else if (/order-history/.test(tabs[0].url) === true) {
-            vm.importState(vm.RDY_TO_IMPORT);
-            $action_button.click(function() {
-                start_importing_purchase_history(vm); });
-        } else {
-            vm.importState(vm.IDLE);
-            $action_button.click(visit_amazon_purchase_history);
-        }
-        ko.applyBindings(vm, document.getElementById("importTab"));
-    });
+(function() {
+    var vm = new ImportTabVM();
+    $(".gotoamazon").on("click", visit_amazon_purchase_history);
 
-});
+    $(function() {
+        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+            if (/\/ap\/signin/.test(tabs[0].url)) {
+                var amz = /(\.com|.uk|.de)/i.exec(tabs[0].url)[1].substr(1);
+                vm.amazon_branch(amz);
+                vm.importState(vm.WAIT_LOGIN);
+            } else if (/order-history/.test(tabs[0].url) === true) {
+                var AMAZON_PURCHASE_HISTORY_URL = /^([^?]+\?)/i.exec(tabs[0].url)[1] + "ie=UTF8";
+                var amz = /(\.com|.uk|.de)/i.exec(tabs[0].url)[1].substr(1);
+                vm.amazon_branch(amz);
+                vm.importState(vm.RDY_TO_IMPORT);
+                $action_button.on("click", function() {
+                    start_importing_purchase_history(AMAZON_PURCHASE_HISTORY_URL, drawer, vm); });
+            } else {
+                vm.importState(vm.IDLE);
+            }
+            ko.applyBindings(vm, document.getElementById("importTab"));
+        });
+
+    });
+})();

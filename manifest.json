@@ -9,15 +9,11 @@
     "icons":{
         "128":"img/drawer_logo.png"
     },
-    //"background":{
-    //    "page": "background.html"
-    //},
     "content_scripts":[
         {
             "matches":["<all_urls>"],
             "js":["js/jquery-2.0.3.min.js", "bootstrap.inpage/js/bootstrap.min.js",
-                  "js/underscore-1.5.2.js", "js/gsh-detect.js",
-                  "js/amazon_import_ui.js"  ], // just for testing
+                  "js/underscore-1.5.2.js", "js/gsh-detect.js"],
             "css": ["css/style.css"
                     //,"bootstrap.inpage/css/bootstrap.min.css"
                     ],
@@ -27,15 +23,9 @@
     ],
 
     "browser_action":{
-        //"default_title":"This shop is interested in stuff you bought in the past.",
         "default_icon" : "img/drawer_logo.png",
         "default_popup" : "itemmanager.html"
     },
-    //"browser_action":{
-    //    "default_icon" : "img/drawer_logo.png",
-    //    "default_title" : "Drawer - Your personal inventory",
-    //    "default_popup" : "background.html"
-    //},
 	"web_accessible_resources" : [
 		"js/jquery-2.0.3.min.js", "js/jquery-2.0.3.min.map",
         "js/underscore-1.5.2.js",

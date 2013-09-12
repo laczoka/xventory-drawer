@@ -1,22 +1,33 @@
-function Drawer() {
+function Drawer($) {
     var self = this;
+    self.$body = $("body");
     self._db = window.localStorage;
+    self.items = undefined;
 
-    self.items = ko.observableArray(self._db["Pinventory"] ? JSON.parse(self._db["Pinventory"]) : []);
+    self.reload = function() {
+        self.items = self._db["Pinventory"] ? JSON.parse(self._db["Pinventory"]) : [];
+        self.$body.trigger("drawer.itemsLoaded");
+    }
+
+    self.reload();
 
     self.save = function() {
-        self._db["Pinventory"] = JSON.stringify(self.items());
+        self._db["Pinventory"] = JSON.stringify(self.items);
     };
 
     self.addItem = function(newItem) {
-       var productID = _.intersection(['gtin8', 'gtin13', 'gtin14', 'asin'], _.keys(newItem)).pop();
-
-       var product_found_in_inventory = productID && _.find(self.items(),
+       var pIDkey = _.intersection(['gtin8', 'gtin13', 'gtin14', 'asin'], _.keys(newItem)).pop();
+       var pID = pIDkey && newItem[pIDkey];
+       var product_found_in_inventory = pID && _.find(self.items,
            function(i) {
-            return i[productID] && (i[productID] == newItem[productID]); });
+               var found = i[pIDkey] && (i[pIDkey] == pID)
+                && i["ownedFrom"] && (i["ownedFrom"] == newItem["ownedFrom"]);
+
+            return found;});
 
        if (!product_found_in_inventory) {
            self.items.push(newItem);
+           self.$body.trigger("drawer.itemAdded", newItem);
        }
        return !product_found_in_inventory;
     };
@@ -27,15 +38,16 @@ function Drawer() {
 
     self.deleteAll = function() {
         self._db["Pinventory"] = JSON.stringify([]);
-        self.items.removeAll();
+        self.reload();
     };
 }
 
-drawer = new Drawer();
+drawer = new Drawer($);
 
 function PinventoryViewModel(drawer) {
     var self = this;
-    self.pitems = drawer.items;
+    var $body = $("body");
+    self.pitems = ko.observableArray(drawer.items.slice());
 
     // UI
     self.noPItemsYet = ko.computed(function () {
@@ -43,16 +55,12 @@ function PinventoryViewModel(drawer) {
     });
 
     // react to changes in the datastore
-    self.itemAdded = function(newItem) {
+   /* self.itemAdded = function(newItem) {
         self.pitems.push(newItem);
         self.showNotification("success", "Just added a "+newItem.name+" to your inventory.")
-    };
+    }; */
 
     self.candidateItem = ko.observable(null);
-
-    self.deleteAllItems = function() {
-        drawer.deleteAll();
-    };
 
     self.sortItemsMostRecentFirst = function() {
         self.pitems.sort(function(left,right) {
@@ -85,22 +93,30 @@ function PinventoryViewModel(drawer) {
     self.notificationsEnabled = false;
     // turned back on
     self.notificationsEnabled = true;
+
+    $body.on("drawer.itemAdded", function(event, newItem) {
+        self.pitems.push(newItem);
+    });
+    $body.on("drawer.itemsLoaded", function(event) {
+        self.pitems(drawer.items);
+    })
 }
 
-// setup loop
-$(function () {
-    var VM = new PinventoryViewModel(drawer);
+// setup
+(function() {
+var VM = new PinventoryViewModel(drawer);
 
-    ko.applyBindings(VM, document.getElementById("inventoryTab"));
-
-    $("#emptyInventoryBtn").on("click",function() {
-        VM.deleteAllItems();
-    });
-
-    $("#sortByDateDesc").on("click", function() {
-       VM.sortItemsMostRecentFirst();
-    });
-
-    $("#closeWindow").on("click", function() { window.close();});
-
+$("#emptyInventoryBtn").on("click",function() {
+    drawer.deleteAll();
 });
+
+$("#sortByDateDesc").on("click", function() {
+    VM.sortItemsMostRecentFirst();
+});
+
+$("#closeWindow").on("click", function() { window.close();});
+
+$(function () {
+    ko.applyBindings(VM, document.getElementById("inventoryTab"));
+});
+})();
