@@ -10,24 +10,29 @@
 </head>
 <body style="width:800px;height:100%">
 <div class="container">
-        <ul class="nav nav-pills">
-            <li class="active">
-                <a href="#inventoryTab" data-toggle="tab">
-                    <i class="glyphicon glyphicon-home"></i> My inventory</a></li>
-            <li><a href="#statsTab" data-toggle="tab">
-                    <i class="glyphicon glyphicon-stats"></i> Stats</a></li>
-            <li><a href="#importTab" data-toggle="tab">
-                <i class="glyphicon glyphicon-import"></i> Import</a></li>
-            <li><a href="#advancedTab" data-toggle="tab">
-                <i class="glyphicon glyphicon-wrench"></i> Settings</a></li>
-            <li><a id="closeWindow" href="#">
-                <i class="glyphicon glyphicon-remove"></i> Close</a></li>
-        </ul>
+    <ul class="nav nav-pills">
+        <li class="active">
+            <a href="#inventoryTab" data-toggle="tab">
+                <i class="glyphicon glyphicon-home"></i> My inventory</a></li>
+        <li><a href="#statsTab" data-toggle="tab">
+            <i class="glyphicon glyphicon-stats"></i> Stats</a></li>
+        <li><a href="#importTab" data-toggle="tab">
+            <i class="glyphicon glyphicon-import"></i> Import</a></li>
+        <li><a href="#advancedTab" data-toggle="tab">
+            <i class="glyphicon glyphicon-wrench"></i> Settings</a></li>
+        <li><a id="closeWindow" href="#">
+            <i class="glyphicon glyphicon-remove"></i> Close</a></li>
+    </ul>
     <div class="tab-content">
         <div class="tab-pane active" id="inventoryTab">
             <div class="row" style="padding-bottom:10px">
                 <button id="sortByDateDesc" class="btn btn-default btn-xs">
-                <i class="glyphicon glyphicon-sort-by-attributes-alt"></i> sort by date</button></div>
+                    <i class="glyphicon glyphicon-sort-by-attributes-alt"></i> sort by date
+                </button>
+                <buttton type="button" class="btn btn-default addNewItemBtn">
+                    <i class="glyphicon glyphicon-plus"></i> Add new
+                </buttton>
+            </div>
             <!-- ko foreach: pitems -->
             <div class="row">
                 <div class="col-sm-2">
@@ -35,8 +40,11 @@
                 </div>
                 <div class="col-sm-8">
                     <h5 style="text-align: center" data-bind="text: name"></h5>
-                    <p>Bought <span class="badge" data-bind="text: count"></span> at <span class="label label-primary" data-bind="text: $data.acquiredFrom ? $data.acquiredFrom.name : 'N/A'"></span>&nbsp;
-                        <span class="label label-default" data-bind="if: $data['price']">for <span data-bind="text: count*price.amount"></span>&nbsp;
+
+                    <p>Bought <span class="badge" data-bind="text: count"></span> at <span class="label label-primary"
+                                                                                           data-bind="text: $data.acquiredFrom ? $data.acquiredFrom.name : 'N/A'"></span>&nbsp;
+                        <span class="label label-default" data-bind="if: $data['price']">for <span
+                                data-bind="text: count*price.amount"></span>&nbsp;
                         <span data-bind="text: price.currency"></span></span></p>
                     <table class="table table-condensed">
                         <tr>
@@ -53,19 +61,23 @@
             <!-- /ko -->
             <div data-bind="if: noPItemsYet" class="row">
                 <p>There are no items in your inventory. <br>
-                    Why not add one? <button class="btn btn-primary"><i class="glyphicon glyphicon-plus"></i> Add new item</button></p>
+                    Why not add one?
+                    <button class="btn btn-primary"><i class="glyphicon glyphicon-plus"></i> Add new item</button>
+                </p>
             </div>
         </div>
 
 
         <div class="tab-pane" id="importTab">
-            <h4>Import a list of your purchases from <img data-bind="visible: importState() != 'IDLE' ,attr: { src : current_logo }" src=""></h4>
+            <h4>Import a list of your purchases from <img
+                    data-bind="visible: importState() != 'IDLE' ,attr: { src : current_logo }" src=""></h4>
+
             <div class="row">
                 <div data-bind="visible: importState() == 'IDLE'" class="col-md-6">
                     <a class="gotoamazon" href="https://www.amazon.de/gp/css/order-history?ie=UTF8">
                         <img class="img-thumbnail" alt="amazon.de" src="img/amazonde_logo.jpg"></a>&nbsp;
                     <a class="gotoamazon" href="https://www.amazon.com/gp/css/order-history?ie=UTF8">
-                            <img class="img-thumbnail" alt="amazon.com" src="img/amazoncom_logo.jpg"></a>&nbsp;
+                        <img class="img-thumbnail" alt="amazon.com" src="img/amazoncom_logo.jpg"></a>&nbsp;
                     <a class="gotoamazon" href="https://www.amazon.co.uk/gp/css/order-history?ie=UTF8">
                         <img class="img-thumbnail" alt="amazon.co.uk" src="img/amazonuk_logo.jpg"></a>
                 </div>
@@ -73,29 +85,36 @@
             <div class="row">
                 <div class="col-md-6">
                     <p>
-                    <button id="import_amazon_items" class="btn btn-default"
-                            data-bind="
+                        <button id="import_amazon_items" class="btn btn-default"
+                                data-bind="
                                 text: importTabActionBtnLabel,
                              disable: importTabActionBtnDisabled,
-                             visible: importState() == 'RDY_TO_IMPORT' || importState() == 'IMPORT_IN_PROGRESS'">Start import</button>
+                             visible: importState() == 'RDY_TO_IMPORT' || importState() == 'IMPORT_IN_PROGRESS'">Start
+                            import
+                        </button>
                     </p>
                     <div data-bind="if: importState() == 'IMPORT_IN_PROGRESS'">
                         <p>Import may take up to a minute.</p>
+
                         <p>Found <span data-bind="text: scannedItemCount">0</span> item(s) so far...</p>
+
                         <div class="progress progress-striped active">
-                            <div class="progress-bar"  role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+                            <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0"
+                                 aria-valuemax="100" style="width: 100%">
                                 <span class="sr-only">In progress...</span></div>
                         </div>
                     </div>
 
                     <div data-bind="if: importState() == 'IMPORT_DONE'">
-                    <p>Found <span data-bind="text: scannedItemCount">0</span> item(s).</p>
-                    <p>Imported <span data-bind="text: importTabImportCount">0</span> new item(s).</p></div>
+                        <p>Found <span data-bind="text: scannedItemCount">0</span> item(s).</p>
+
+                        <p>Imported <span data-bind="text: importTabImportCount">0</span> new item(s).</p></div>
                 </div>
             </div>
         </div>
         <div class="tab-pane" id="advancedTab">
             <h4>For advanced users</h4>
+
             <p>
                 <button data-toggle="modal" href="#deleteAllItemsModal" class="btn btn-danger">
                     <i class="glyphicon glyphicon-trash"></i> Empty inventory
@@ -105,7 +124,103 @@
     </div>
 </div>
 
-<!-- Modal -->
+<!-- Add/Edit Item Modal -->
+<div class="modal fade" id="addEditItemModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title">Edit item</h4>
+            </div>
+            <div class="modal-body">
+                <form role="form" class="form-horizontal">
+                    <div class="form-group">
+                        <label for="item_name" class="control-label col-sm-3">Product name</label>
+
+                        <div class="col-sm-9">
+                            <input name="name" id="item_name" type="text" class="form-control"
+                                   placeholder="e.g Upple uPhone 5B">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="item_name" class="control-label col-sm-3">Product page</label>
+
+                        <div class="col-sm-9">
+                            <input name="name" id="item_url" type="url" class="form-control"
+                                   placeholder="e.g http://www.imizon.com/product/some-product">
+                        </div>
+                    </div>
+                    <fieldset>
+                        <legend>Product ID</legend>
+                        <div class="form-group">
+                            <label for="item_asin" class="control-label col-sm-2">ASIN</label>
+                            <div class="col-sm-4">
+                                <input name="asin" id="item_asin" type="text" class="form-control input-sm"
+                                       placeholder="Amazon Product ID">
+                            </div>
+                            <label for="item_gtin8" class="control-label col-sm-2">GTIN8</label>
+                            <div class="col-sm-4">
+                                <input name="gtin8" id="item_gtin8" type="text" class="form-control input-sm"
+                                       placeholder="GTIN8">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="item_gtin13" class="control-label col-sm-2">GTIN13</label>
+                            <div class="col-sm-4">
+                                <input name="gtin13" id="item_gtin13" type="text" class="form-control input-sm"
+                                       placeholder="GTIN13">
+                            </div>
+                            <label for="item_gtin14" class="control-label col-sm-2">GTIN14</label>
+                            <div class="col-sm-4">
+                                <input name="gtin14" id="item_gtin14" type="text" class="form-control input-sm"
+                                       placeholder="GTIN14">
+                            </div>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Purchase details</legend>
+                        <div class="form-group">
+                            <label class="control-label col-sm-3">Acquired from</label>
+                            <div class="col-sm-4">
+                                <input name="acquiredFrom.name" type="text" class="form-control" placeholder="Imizon DE">
+                            </div>
+                            <div class="col-sm-5">
+                                <input name="acquiredFrom.url" type="url" class="form-control" placeholder="http://www.imizon.com/">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-sm-3">Owned since</label>
+                            <div class="col-sm-4">
+                                <input name="ownedFrom" type="date" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-sm-3">Purchase price</label>
+                            <div class="col-sm-4">
+                                <input name="price.amount" type="number" class="form-control" placeholder="e.g. 15.34">
+                            </div>
+                            <div class="col-sm-2">
+                            <select name="price.currency" class="form-control">
+                                <option value="EUR">EUR</option>
+                                <option value="GBP">GBP</option>
+                                <option value="USD">USD</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button id="saveItemBtn" type="button" class="btn btn-primary" data-dismiss="modal">Save</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+
+<!-- DeleteModal -->
 <div class="modal fade" id="deleteAllItemsModal" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -120,11 +235,17 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                <button id="emptyInventoryBtn" type="button" class="btn btn-primary" data-dismiss="modal">Yes, nuke 'em all</button>
+                <button id="emptyInventoryBtn" type="button" class="btn btn-primary" data-dismiss="modal">Yes, nuke 'em
+                    all
+                </button>
             </div>
-        </div><!-- /.modal-content -->
-    </div><!-- /.modal-dialog -->
-</div><!-- /.modal -->
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+
 
 <script type="text/javascript" src="js/underscore-1.5.2.js"></script>
 <script type="text/javascript" src="bootstrap3/js/bootstrap.min.js"></script>
