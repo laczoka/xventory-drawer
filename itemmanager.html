@@ -23,6 +23,7 @@
         <li><a id="closeWindow" href="#">
             <i class="glyphicon glyphicon-remove"></i> Close</a></li>
     </ul>
+    <div id="notification" data-bind="visible: notification, text: notification" class="alert alert-success"></div>
     <div class="tab-content">
         <div class="tab-pane active" id="inventoryTab">
             <div class="row" style="padding-bottom:10px">
@@ -34,26 +35,30 @@
                 </buttton>
             </div>
             <!-- ko foreach: pitems -->
-            <div class="row">
+            <div class="row hover-on-toolbar hover-on-highlight">
                 <div class="col-sm-2">
-                    <img data-bind="attr: { src: image }" src="http://placehold.it/100x79" class="img-thumbnail">
+                    <img data-bind="attr: { src: $data['image'] }" src="http://placehold.it/100x79" class="img-thumbnail">
                 </div>
                 <div class="col-sm-8">
-                    <h5 style="text-align: center" data-bind="text: name"></h5>
+                    <div class="btn-group toolbar">
+                        <button type="button" class="btn btn-sm btn-primary editItemBtn" data-bind="attr: {itemId: $data['_id']}"><i class="glyphicon glyphicon-edit"></i></button>
+                        <button type="button" class="btn btn-sm btn-danger deleteItemBtn" data-bind="attr: {itemId: $data['_id']}"><i class="glyphicon glyphicon-remove"></i></button>
+                    </div>
+                    <h5 style="text-align: center" data-bind="text: $data['name']"></h5>
 
-                    <p>Bought <span class="badge" data-bind="text: count"></span> at <span class="label label-primary"
-                                                                                           data-bind="text: $data.acquiredFrom ? $data.acquiredFrom.name : 'N/A'"></span>&nbsp;
+                    <p>Bought <span class="badge" data-bind="text: $data['count']"></span> at <span class="label label-primary"
+                                                                                           data-bind="text: $data['acquiredFrom'] ? $data.acquiredFrom.name : 'N/A'"></span>&nbsp;
                         <span class="label label-default" data-bind="if: $data['price']">for <span
-                                data-bind="text: count*price.amount"></span>&nbsp;
+                                data-bind="text: $data['count'] ? count*price.amount : 'N/A'"></span>&nbsp;
                         <span data-bind="text: price.currency"></span></span></p>
                     <table class="table table-condensed">
                         <tr>
                             <td><strong>Owned since</strong></td>
-                            <td data-bind="text: $root.formatDate(ownedFrom)"></td>
+                            <td data-bind="text: $root.formatDate($data['ownedFrom'])"></td>
                         </tr>
                         <tr>
                             <td><strong>ASIN</strong></td>
-                            <td data-bind="text: asin"></td>
+                            <td data-bind="text: $data['asin']"></td>
                         </tr>
                     </table>
                 </div>
@@ -134,20 +139,33 @@
             </div>
             <div class="modal-body">
                 <form role="form" class="form-horizontal">
+                    <input name="_id" type="hidden" value="">
                     <div class="form-group">
                         <label for="item_name" class="control-label col-sm-3">Product name</label>
-
                         <div class="col-sm-9">
                             <input name="name" id="item_name" type="text" class="form-control"
                                    placeholder="e.g Upple uPhone 5B">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="item_name" class="control-label col-sm-3">Product page</label>
-
+                        <label for="item_url" class="control-label col-sm-3">Product page</label>
                         <div class="col-sm-9">
-                            <input name="name" id="item_url" type="url" class="form-control"
+                            <input name="url" id="item_url" type="url" class="form-control"
                                    placeholder="e.g http://www.imizon.com/product/some-product">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="item_image" class="control-label col-sm-3">Product image URL</label>
+                        <div class="col-sm-9">
+                            <input name="image" id="item_image" type="url" class="form-control"
+                                   placeholder="e.g http://www.sany.com/product/x34ks33/image.jpg">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="item_categories" class="control-label col-sm-3">Categories</label>
+                        <div class="col-sm-9">
+                            <input name="categories" id="item_categories" type="text" class="form-control"
+                                   placeholder="Comma separated arbitrary categories e.g furniture,home">
                         </div>
                     </div>
                     <fieldset>
@@ -182,16 +200,22 @@
                         <div class="form-group">
                             <label class="control-label col-sm-3">Acquired from</label>
                             <div class="col-sm-4">
-                                <input name="acquiredFrom.name" type="text" class="form-control" placeholder="Imizon DE">
+                                <input name="acquiredFrom.name" type="text" class="form-control" placeholder="e.g Imizon DE">
                             </div>
                             <div class="col-sm-5">
-                                <input name="acquiredFrom.url" type="url" class="form-control" placeholder="http://www.imizon.com/">
+                                <input name="acquiredFrom.url" type="url" class="form-control" placeholder="e.g. http://www.imizon.com/">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-sm-3">Amount of this good</label>
+                            <div class="col-sm-4">
+                                <input name="count" type="text" class="form-control" placeholder="e.g 2">
                             </div>
                         </div>
                         <div class="form-group">
                             <label class="control-label col-sm-3">Owned since</label>
                             <div class="col-sm-4">
-                                <input name="ownedFrom" type="date" class="form-control">
+                                <input name="ownedFrom" type="text" class="form-control" placeholder="YYYY-mm-dd">
                             </div>
                         </div>
                         <div class="form-group">

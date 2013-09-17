@@ -10,3 +10,18 @@
     padding-top: 15px;
     padding-bottom: 15px;
 }
+
+
+.hover-on-toolbar .toolbar {
+    visibility:hidden;
+}
+.hover-on-toolbar:hover .toolbar {
+    visibility:visible;
+}
+
+.hover-on-highlight:hover {
+    background-color: #a6e1ec;
+    transition-property: background-color;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out;
+}
