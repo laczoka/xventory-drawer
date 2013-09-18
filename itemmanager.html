@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable = no">
     <meta name="charset" content="utf-8">
     <link rel="stylesheet" type="text/css" href="bootstrap3/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="bootstrap3/css/bootstrap-theme.min.css">
@@ -117,9 +117,18 @@
                 </div>
             </div>
         </div>
-        <div class="tab-pane" id="advancedTab">
-            <h4>For advanced users</h4>
 
+        <div id="statsTab" class="tab-pane">
+            <div class="row">
+                <div class="col-sm-10 col-sm-offset-1">
+                    <h3>Yearly spending</h3>
+                    <canvas id="annualSpendingCanvas" height="300" width="625"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="advancedTab" class="tab-pane">
+            <h4>For advanced users</h4>
             <p>
                 <button data-toggle="modal" href="#deleteAllItemsModal" class="btn btn-danger">
                     <i class="glyphicon glyphicon-trash"></i> Empty inventory
@@ -263,19 +272,17 @@
                     all
                 </button>
             </div>
-        </div>
-        <!-- /.modal-content -->
-    </div>
-    <!-- /.modal-dialog -->
-</div>
-<!-- /.modal -->
-
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 
 <script type="text/javascript" src="js/underscore-1.5.2.js"></script>
 <script type="text/javascript" src="bootstrap3/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="js/knockout-2.3.0.js"></script>
-<script type="text/javascript" src="js/drawer.js"></script>
+<script type="text/javascript" src="js/Chart.customized.js"></script>
 <script type="text/javascript" src="js/jqasync.js"></script>
 <script type="text/javascript" src="js/amazon_import_ui.js"></script>
+<script type="text/javascript" src="js/stats.js"></script>
+<script type="text/javascript" src="js/drawer.js"></script>
 </body>
 </html>

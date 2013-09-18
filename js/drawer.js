@@ -190,11 +190,11 @@ function AddEditItemViewModel(drawer,$modal, item) {
     self.$modal = $modal;
     self.item = item;
 
-    self.data2display = { "acquiredFrom" : function (ts) {var d = new Date(ts); return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDay()},
-                            "categories" : function(arr) { return _.isArray(arr) && arr.join(",") || ""}};
-    self.display2data = { "acquiredFrom" : function (dtstr) {var d = dtstr && Date.parse(dtstr); return d && d.getTime();},
-                          "price.amount" : function(n) {return parseFloat(n)},
-                                 "count" : function(n) {return parseFloat(n)},
+    self.data2display = { "ownedFrom" : function (ts) {var d = new Date(ts); return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDay()},
+                            "categories" : function(arr) {return _.isArray(arr) && arr.join(",") || ""}};
+    self.display2data = { "ownedFrom" : function (dtstr) {return dtstr && Date.parse(dtstr)},
+                          "price.amount" : parseFloat,
+                                 "count" : function(c) {return c ? parseFloat(c) : 1},
                             "categories" : function(catstr) {return catstr && _.map(catstr.split(","),function(c){return c.trim()})}};
 
     var fobj = flatObject(self.item);
@@ -247,7 +247,7 @@ $("#inventoryTab")
             drawer.save();
         } });
 
-
+$('a[data-toggle="tab"][href="#statsTab"]').on('shown.bs.tab', showStats);
 
 $("#sortByDateDesc").on("click", function() {
     VM.sortItemsMostRecentFirst();
