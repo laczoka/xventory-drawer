@@ -197,7 +197,7 @@ function AddEditItemViewModel(drawer,$modal, item) {
     self.$modal = $modal;
     self.item = item;
 
-    self.data2display = { "ownedFrom" : function (ts) {var d = new Date(ts); return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDay()},
+    self.data2display = { "ownedFrom" : function (ts) {var d = new Date(ts); return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate()},
                             "categories" : function(arr) {return _.isArray(arr) && arr.join(",") || ""}};
     self.display2data = { "ownedFrom" : function (dtstr) {return dtstr && Date.parse(dtstr)},
                           "price.amount" : parseFloat,
@@ -236,6 +236,39 @@ $("#emptyInventoryBtn").on("click",function() {
 });
 
 
+function Dialog(domEl,opts) {
+
+    var dialogRootId = domEl.id || "dialogxxx";
+    opts = _.extend(
+        {
+            dialogDomId : dialogRootId,
+            modalTitle: "Irreversible operation",
+            modalMessage: "This operation can't be undone. Are you sure you want to continue?",
+            confirmBtnLabel : "Confirm",
+            onConfirm : function() {},
+            onCancel : function() {}
+        }, opts);
+
+    var html = _.template(
+        '<div class="modal fade" id="<%= dialogDomId %>" tabindex="-1" role="dialog">'+
+        '<div class="modal-dialog"><div class="modal-content">'+
+            '<div class="modal-header">'+
+                '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>'+
+                '<h4 class="modal-title"><%= modalTitle %></h4></div>'+
+            '<div class="modal-body"><%= modalMessage %></div>'+
+            '<div class="modal-footer">'+
+                '<button type="button" class="btn btn-default cancel-button" data-dismiss="modal">Cancel</button>'+
+                '<button type="button" class="btn btn-primary confirm-button" data-dismiss="modal"><%= confirmBtnLabel %></button>'+
+                '</div></div></div></div>');
+
+    $(domEl).replaceWith(html(opts));
+    var $modal = $("#"+dialogRootId)
+        .on("click",".confirm-button", opts.onConfirm)
+        .on("click",".cancel-button", opts.onCancel);
+    return $modal;
+}
+
+
 function addOrEditItem() {
     var drawer_item = drawer.lookupItem($(this).attr("itemId"));
     var $dialog = $("#addEditItemModal");
@@ -250,15 +283,26 @@ $("#inventoryTab")
     .on("click", ".deleteItemBtn", function() {
         var drawer_item_id = $(this).attr("itemId");
         if (drawer_item_id) {
-            drawer.deleteItem(drawer_item_id);
-            drawer.save();
-        } });
+            Dialog(document.getElementById("dialog"), {
+                onConfirm: function () {
+                    drawer.deleteItem(drawer_item_id);
+                    drawer.save();
+                }}).modal('show');
+        }});
 
 $('a[data-toggle="tab"][href="#statsTab"]').on('shown.bs.tab', showStats);
 
 $("#sortByDateDesc").on("click", function() {
     VM.sortItemsMostRecentFirst();
 });
+
+$("#exportTab")
+    .on('click','.export-jsonld',function() {
+        var jsonld = rdfexport.jsonld.dump(drawer.getItems(), drawer.genId);
+        $("#exportField").text(JSON.stringify(jsonld,null," "));})
+    .on('click','.select-all-btn', function (event) {
+        $("#exportField").select();
+    });
 
 $("#closeWindow").on("click", function() { window.close();});
 
