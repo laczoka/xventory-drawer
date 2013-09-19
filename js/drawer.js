@@ -70,13 +70,12 @@ function Drawer($) {
 
         if (!product_found_in_inventory) {
             var savedItem = self.saveItem(newItem);
-            self.$body.trigger("drawer.itemAdded", newItem);
         }
-        return product_found_in_inventory ? product_found_in_inventory : savedItem;
+        return product_found_in_inventory ? false : savedItem;
     };
 
     self.addItems = function(newItemsArr) {
-        return _.map(newItemsArr,self.addItem);
+        return _.map(newItemsArr,function(i){return self.addItem(i)});
     };
 
     self.deleteItem = function(itemId) {
@@ -97,7 +96,8 @@ drawer = new Drawer($);
 
 function PinventoryViewModel(drawer, notifier) {
     var self = this,
-        $body = $("body");
+        $body = $("body"),
+        $inventoryTab = $("#inventoryTab");
     self.pitems = ko.observableArray(drawer.getItems());
     self.notifier = notifier;
 
@@ -124,19 +124,26 @@ function PinventoryViewModel(drawer, notifier) {
 
     $body.on("drawer.itemAdded", function(event, newItem) {
         self.pitems.push(newItem);
+    });
+
+    $inventoryTab.on("drawer.itemAdded", function(event, newItem) {
         self.notifier.showNotification("success", "Just added a "+newItem.name+" to your inventory.")
     });
+
     $body.on("drawer.itemsLoaded", function() {
         self.pitems(drawer.getItems());
     });
+
     $body.on("drawer.itemChanged", function(event, savedItem) {
         var oldItem = ko.utils.arrayFirst(self.pitems(), _.partial(self.matchById, savedItem));
         if (oldItem) {
             self.pitems.replace(oldItem, savedItem);
+            self.notifier.showNotification("success", "Changes to "+savedItem.name+" have been SAVED.")
         } else {
             self.pitems.push(savedItem);
         }
     });
+
     $body.on("drawer.itemDeleted", function (event, deletedItem) {
             self.pitems.remove(_.partial(self.matchById, deletedItem));
     });

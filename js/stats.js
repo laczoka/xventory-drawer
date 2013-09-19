@@ -93,6 +93,9 @@ function showStats() {
     var barChartOpts = { valueOnTop : true };
 
     var annualStatsPerCurrency = calculateAnnualStats(drawer.getItems());
-
-    var myAnnualSpending = new Chart(document.getElementById("annualSpendingCanvas").getContext("2d")).Bar(annualStatsPerCurrency, barChartOpts);
+    if (annualStatsPerCurrency.labels && annualStatsPerCurrency.labels.length > 0) {
+        var myAnnualSpending = new Chart(document.getElementById("annualSpendingCanvas")
+            .getContext("2d"))
+            .Bar(annualStatsPerCurrency, barChartOpts);
+    }
 }

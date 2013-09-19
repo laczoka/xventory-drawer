@@ -8,7 +8,7 @@
     <link rel="stylesheet" type="text/css" href="css/style.css">
     <script type="text/javascript" src="js/jquery-2.0.3.min.js"></script>
 </head>
-<body style="width:800px;height:100%">
+<body style="width:800px;height:1000px">
 <div class="container">
     <ul class="nav nav-pills">
         <li class="active">
@@ -31,7 +31,7 @@
                     <i class="glyphicon glyphicon-sort-by-attributes-alt"></i> sort by date
                 </button>
                 <buttton type="button" class="btn btn-default addNewItemBtn">
-                    <i class="glyphicon glyphicon-plus"></i> Add new
+                    <i class="glyphicon glyphicon-plus"></i> Add new item
                 </buttton>
             </div>
             <!-- ko foreach: pitems -->
@@ -45,7 +45,11 @@
                         <button type="button" class="btn btn-sm btn-danger deleteItemBtn" data-bind="attr: {itemId: $data['_id']}"><i class="glyphicon glyphicon-remove"></i></button>
                     </div>
                     <h5 style="text-align: center" data-bind="text: $data['name']"></h5>
-
+                    <h6 data-bind="if: $data['categories'] && $data['categories'].length">
+                        <div data-bind="foreach: $data.categories">
+                            <span class="label label-info" data-bind="text: $data"></span>
+                        </div>
+                    </h6>
                     <p>Bought <span class="badge" data-bind="text: $data['count']"></span> at <span class="label label-primary"
                                                                                            data-bind="text: $data['acquiredFrom'] ? $data.acquiredFrom.name : 'N/A'"></span>&nbsp;
                         <span class="label label-default" data-bind="if: $data['price']">for <span
@@ -67,7 +71,6 @@
             <div data-bind="if: noPItemsYet" class="row">
                 <p>There are no items in your inventory. <br>
                     Why not add one?
-                    <button class="btn btn-primary"><i class="glyphicon glyphicon-plus"></i> Add new item</button>
                 </p>
             </div>
         </div>
@@ -100,6 +103,7 @@
                     </p>
                     <div data-bind="if: importState() == 'IMPORT_IN_PROGRESS'">
                         <p>Import may take up to a minute.</p>
+                        <p><strong>Keep this window open while the import is running!</strong></p>
 
                         <p>Found <span data-bind="text: scannedItemCount">0</span> item(s) so far...</p>
 
