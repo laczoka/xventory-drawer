@@ -141,7 +141,7 @@ function AmazonHistoryImporter(AMAZON_PURCHASE_HISTORY_URL, drawer, vm) {
 
         var arr_items = _.map(arr_items_pricestr, function(item_pricestr) {
             var pricestr = item_pricestr.price;
-            var currency_res = pricestr.match(/(EUR|\u20ac)/i);
+            var currency_res = pricestr.match(/(EUR|\u20ac|GBP|\u00a3|USD|\$)/i);
             var currency = _.isArray(currency_res) ? currency_res[0] : undefined;
             var amount_res = pricestr.replace(",",".").match(/[0-9]+(\.[0-9]{1,2})?/);
             var amount = _.isArray(amount_res) ? parseFloat(amount_res[0]) : undefined;
