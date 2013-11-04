@@ -14,57 +14,69 @@ function Drawer($) {
     self.$body = $("body");
     self._db = window.localStorage;
     // self._items :: { _id -> DrawerItem }
-    self._items = undefined;
+    //self._items = undefined;
 
     self.genId = function() {
         var newid;
+        var _items = self._loadItems();
         do {
             newid = Math.floor(Math.random() * Math.pow(2,50))
-        } while (self._items[newid]);
+        } while (_items[newid]);
         return newid;
     };
 
+    self._loadItems = function() {
+        return self._db["Pinventory"] ? JSON.parse(self._db["Pinventory"]) : {};
+    };
+
+    self._persistItems = function(items) {
+        self._db["Pinventory"] = JSON.stringify(items);
+    };
+
     self.getItems = function() {
-        return _(self._items).values();
+        return _(self._loadItems()).values();
+        //return _(self._items).values();
     };
 
     self.reload = function() {
-        self._items = self._db["Pinventory"] ? JSON.parse(self._db["Pinventory"]) : {};
+        var _items = self._loadItems();
         // migration script array -> indexed
-        self._items = _.isArray(self._items) ?
-            _.chain(self._items)
+        _items = _.isArray(_items) ?
+            _.chain(_items)
              .map(function(i) {return i["_id"] ? i : _(i).extend({_id:self.genId()});})
              .indexBy("_id")
              .value()
-            : self._items;
+            : _items;
         self.$body.trigger("drawer.itemsLoaded");
     };
 
     self.reload();
 
-    self.save = function() {
-        self._db["Pinventory"] = JSON.stringify(self._items);
-    };
-
     self.lookupItem = function(_id) {
-        return self._items[_id];
+        var _items = self._loadItems();
+        return _items[_id];
     };
 
     // upsert item
     self.saveItem = function (item) {
         var itemToSave = item["_id"] ? item : _(item).extend({_id:self.genId()}),
             itemInDb = self.lookupItem(item._id);
-        self._items[item._id] = itemToSave;
+
+        var items = self._loadItems();
+        items[item._id] = itemToSave;
+        var items = self._persistItems(items);
+
         self.$body.trigger( itemInDb ? "drawer.itemChanged" : "drawer.itemAdded", _(itemToSave).clone());
         return _.clone(itemToSave);
     };
 
     // add if not yet in db based on ASIN, GTINx
     self.addItem = function(newItem) {
+        var _items = self._loadItems();
         var pIDkey = _.intersection(['gtin8', 'gtin13', 'gtin14', 'asin'], _.keys(newItem)).pop();
         var pID = pIDkey && newItem[pIDkey];
         var product_found_in_inventory = pID && _.find(
-            _(self._items).values(), function(i) {
+            _(_items).values(), function(i) {
                 return i[pIDkey] && (i[pIDkey] == pID)
                     && i["ownedFrom"] && (i["ownedFrom"] == newItem["ownedFrom"]);});
 
@@ -81,7 +93,9 @@ function Drawer($) {
     self.deleteItem = function(itemId) {
         var itemToDelete = self.lookupItem(itemId);
         if (itemToDelete) {
-            delete self._items[itemId];
+            var _items = self._loadItems();
+            delete _items[itemId];
+            self._persistItems(_items);
             self.$body.trigger("drawer.itemDeleted", itemToDelete);
         }
     };
@@ -222,7 +236,6 @@ function AddEditItemViewModel(drawer,$modal, item) {
         var flat_item_data = _.object(kvs);
         var item_data = expandObject(flat_item_data);
         drawer.saveItem(new DrawerItem(item_data));
-        drawer.save();
     };
 }
 
@@ -286,7 +299,6 @@ $("#inventoryTab")
             Dialog(document.getElementById("dialog"), {
                 onConfirm: function () {
                     drawer.deleteItem(drawer_item_id);
-                    drawer.save();
                 }}).modal('show');
         }});
 
@@ -307,7 +319,7 @@ $("#exportTab")
 $("#closeWindow").on("click", function() { window.close();});
 
 $(function () {
-    ko.applyBindings(notifierVM, notifierVM.$notificationCnt.get(0));
+   // ko.applyBindings(notifierVM, notifierVM.$notificationCnt.get(0));
     ko.applyBindings(VM, document.getElementById("inventoryTab"));
 });
 })();

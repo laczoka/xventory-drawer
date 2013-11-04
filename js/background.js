@@ -1,10 +1,15 @@
-chrome.extension.onMessage.addListener(
+chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
-        drawer.store.addItem(drawer.store.DB,request,function(success, results) {
-            if (success)
-                sendResponse({success:true});
-            else
-                sendResponse({error:results});
-        });
-
+        if (request.GETITEMS) {
+            console.log("!REceived");
+            //sendResponse("OK");
+            sendResponse(drawer.getItems());
+        }
+        //else {
+        //drawer.store.addItem(drawer.store.DB,request,function(success, results) {
+        //    if (success)
+        //        sendResponse({success:true});
+        //    else
+        //        sendResponse({error:results});
+        //}); }
 });

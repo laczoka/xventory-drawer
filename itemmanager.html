@@ -25,7 +25,9 @@
         <li><a id="closeWindow" href="#">
             <i class="glyphicon glyphicon-remove"></i> Close</a></li>
     </ul>
-    <div id="notification" data-bind="visible: notification, text: notification" class="alert alert-success"></div>
+   <!-- <div id="notification" data-bind="if: notification().msg">
+        <div class="alert alert-success" data-bind="text: notification().msg"></div>
+    </div> -->
     <div class="tab-content">
         <div class="tab-pane active" id="inventoryTab">
             <div class="row" style="padding-bottom:10px">

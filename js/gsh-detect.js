@@ -7,8 +7,15 @@
 var drawer = {};
 
 drawer.sendToStore = function(data, callback) {
-    chrome.extension.sendMessage(data, callback);
-}
+    chrome.runtime.sendMessage(data, callback);
+};
+
+drawer.getAllItemsD = function() {
+    var itemsD = new $.Deferred();
+    chrome.runtime.sendMessage({GETITEMS:true}, function(items)
+        { itemsD.resolve(items);});
+    return itemsD;
+};
 
 var addItemOpenDialogTpl = _.template("<div class='addItemOpenDialog'><a id='drawer_addItemOpenDialog' class='btn btn-info' data-toggle='modal' href='#drawer_addItemDialog'>++ Items ++</a></div>");
 
@@ -53,19 +60,34 @@ var shareItemsDialogTpl = _.template("<div id='drawer_shareItemDialog' class='mo
     "   <a class='btn btn-primary optOutAction' href='#'>No</a></p>" +
     "</div></div>");
 
-    $(function() {
-        setTimeout(
-        function() {
+
+    var DpageReady = $.Deferred();
+    $(document).ready(function() {
+        DpageReady.resolve();
+    });
+
+    var DinitDelay = $.Deferred();
+    var DinitDelay = true;
+    //setTimeout(function() { DinitDelay.resolve();}, 10000);
+
+
+    $.when(DpageReady, DinitDelay, drawer.getAllItemsD()).then(function(dc1,dc2, ownedItems) {
         if (window.location.href != "http://localhost:5000/") {
             return;
         }
         var $link = $('link[rel="http://purl.org/xventory/sink"]');
         if ($link.length > 0) {
 
-            gsh_sink_url = $link[0].href;
+            var gsh_sink_url = $link[0].href;
 
             $("<link type='text/css' rel='stylesheet' href='"+
                 chrome.extension.getURL("bootstrap.inpage/css/bootstrap.min.css")+"'>").appendTo("head");
+
+            /* TODO clean this up */
+            shopping_history = rdfexport.jsonld.dump(ownedItems, function() {
+                return Math.floor(Math.random() * Math.pow(2,50))
+            });
+
             var ownershipInfo = shopping_history["@graph"][0]["s:owns"];
 
             $(shareItemsDialogTpl({ itemtable: itemListTpl({ois:ownershipInfo})})).appendTo("body");
@@ -103,7 +125,7 @@ var shareItemsDialogTpl = _.template("<div id='drawer_shareItemDialog' class='mo
             $(".optOutAction").on("click", function() {
                 $m.modal('hide');
             })
-        }}), 10000
+        }
     });
 
 $(document).ready(function() {

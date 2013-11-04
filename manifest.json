@@ -4,15 +4,19 @@
     "version":"0.3.0",
     "description":"Organize your personal items",
     "content_security_policy" : "script-src 'self' 'unsafe-eval'; object-src 'self'",
-    "permissions" : ["https://*/","http://*/", "tabs"],
+    "permissions" : ["https://*/","http://*/", "tabs", "background"],
     "icons": {
                 "128":"img/drawer_logo.png"
              },
+    "background" : {
+        "scripts" : ["js/jquery-2.0.3.min.js","js/underscore-1.5.2.js", "js/knockout-2.3.0.js", "js/stats.js",
+                     "js/drawer.js", "js/background.js"]
+    },
     "content_scripts": [
         {
             "matches":["<all_urls>"],
             "js":["js/jquery-2.0.3.min.js", "bootstrap.inpage/js/bootstrap.min.js",
-                  "js/underscore-1.5.2.js", "js/gsh-detect.js"],
+                  "js/underscore-1.5.2.js", "js/gsh-detect.js", "js/jsonld-export.js"],
             "css": ["css/style.css"],
             "all_frames":false,
 			"run_at": "document_end"}],
@@ -25,5 +29,6 @@
 		"js/jquery-2.0.3.min.js", "js/jquery-2.0.3.min.map",
         "js/underscore-1.5.2.js",
         "js/gsh-detect.js",
+        "js/jsonld-export.js",
 		"css/style.css","bootstrap.inpage/css/bootstrap.min.css"]
 }
