@@ -231,7 +231,7 @@ function AmazonHistoryImporter(AMAZON_PURCHASE_HISTORY_URL, drawer, vm) {
             var arr_items = _.flatten(_.pluck(arr_orders, "items"));
             var itemsAdded = self.drawer.addItems(arr_items);
             var newItemCount = _.compact(itemsAdded).length;
-            self.drawer.save();
+            
             self.vm.importTabImportCount(newItemCount);
             self.vm.importState(self.vm.IMPORT_DONE);
         });
