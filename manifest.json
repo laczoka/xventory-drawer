@@ -1,7 +1,7 @@
 {
 	"manifest_version" : 2,
     "name":"Drawer",
-    "version":"0.3.0",
+    "version":"0.3.1",
     "description":"Organize your personal items",
     "content_security_policy" : "script-src 'self' 'unsafe-eval'; object-src 'self'",
     "permissions" : ["https://*/","http://*/", "tabs", "background"],
