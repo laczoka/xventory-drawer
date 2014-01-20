@@ -26,11 +26,20 @@ function Drawer($) {
     };
 
     self._loadItems = function() {
-        return self._db["Pinventory"] ? JSON.parse(self._db["Pinventory"]) : {};
+        var loaded;
+        try {
+            loaded = self._db["Pinventory"] ? JSON.parse(self._db["Pinventory"]) : {};
+        } catch (e) {
+            self._db["Pinventory"] = JSON.stringify([]);
+            loaded = [];
+        }
+        return loaded;
     };
 
     self._persistItems = function(items) {
-        self._db["Pinventory"] = JSON.stringify(items);
+        var serialized = JSON.stringify(items);
+        self._db["Pinventory"] = serialized;
+
     };
 
     self.getItems = function() {
@@ -64,7 +73,7 @@ function Drawer($) {
 
         var items = self._loadItems();
         items[item._id] = itemToSave;
-        var items = self._persistItems(items);
+        self._persistItems(items);
 
         self.$body.trigger( itemInDb ? "drawer.itemChanged" : "drawer.itemAdded", _(itemToSave).clone());
         return _.clone(itemToSave);
